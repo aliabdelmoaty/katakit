@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/batches_cubit.dart';
 import 'add_batch_screen.dart';
 import 'batch_details_screen.dart';
@@ -140,66 +141,21 @@ class _BatchesScreenState extends State<BatchesScreen> {
       body: Column(
         children: [
           // Search Bar
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: AppTheme.cardLight,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.textFaint.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                final state = context.read<BatchesCubit>().state;
-                if (state is BatchesLoaded) {
-                  _filterBatches(value, state.batches);
-                }
-              },
-              decoration: InputDecoration(
-                hintText: 'البحث في الدفعات...',
-                hintStyle: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14.sp,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppTheme.textSecondary,
-                  size: 20.w,
-                ),
-                suffixIcon:
-                    _searchController.text.isNotEmpty
-                        ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            final state = context.read<BatchesCubit>().state;
-                            if (state is BatchesLoaded) {
-                              _filterBatches('', state.batches);
-                            }
-                          },
-                          icon: Icon(
-                            Icons.clear,
-                            color: AppTheme.textSecondary,
-                            size: 20.w,
-                          ),
-                        )
-                        : null,
-                filled: true,
-                fillColor: AppTheme.cardLight,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 12.h,
-                ),
-              ),
-            ),
+          EnhancedSearchField(
+            controller: _searchController,
+            hintText: 'البحث في الدفعات...',
+            onChanged: (value) {
+              final state = context.read<BatchesCubit>().state;
+              if (state is BatchesLoaded) {
+                _filterBatches(value, state.batches);
+              }
+            },
+            onClear: () {
+              final state = context.read<BatchesCubit>().state;
+              if (state is BatchesLoaded) {
+                _filterBatches('', state.batches);
+              }
+            },
           ),
           // Batches List
           Expanded(

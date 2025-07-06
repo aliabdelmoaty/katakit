@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/entities/addition_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/additions_cubit.dart';
 
 class AddAdditionScreen extends StatefulWidget {
@@ -38,9 +40,9 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppTheme.primary,
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: AppTheme.primary),
           ),
           child: child!,
         );
@@ -70,7 +72,7 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FormScaffold(
       appBar: AppBar(
         title: Text(
           'إضافة مصروف جديد',
@@ -86,15 +88,15 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.all(16.w),
+        child: Column(
           children: [
             _buildSectionTitle('تفاصيل المصروف'),
             SizedBox(height: 12.h),
-            _buildTextField(
+            EnhancedTextField(
               controller: _nameController,
               label: 'اسم المصروف',
               icon: Icons.receipt_long,
+              textInputAction: TextInputAction.next,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'يرجى إدخال اسم المصروف';
@@ -103,11 +105,15 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
               },
             ),
             SizedBox(height: 12.h),
-            _buildTextField(
+            EnhancedTextField(
               controller: _costController,
               label: 'التكلفة (جنيه)',
               icon: Icons.attach_money,
               keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'يرجى إدخال التكلفة';
@@ -120,9 +126,13 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
               },
             ),
             SizedBox(height: 12.h),
-            _buildDateField(),
+            EnhancedDateField(
+              label: 'تاريخ المصروف',
+              selectedDate: _selectedDate,
+              onTap: _selectDate,
+            ),
             SizedBox(height: 24.h),
-            Container(
+            SizedBox(
               width: double.infinity,
               height: 56.h,
               child: ElevatedButton(
@@ -162,106 +172,13 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
       decoration: BoxDecoration(
         color: AppTheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: AppTheme.primary.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.3), width: 1),
       ),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
           color: AppTheme.primary,
           fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.primary),
-        filled: true,
-        fillColor: AppTheme.cardLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.textFaint),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.textFaint),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.error, width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        labelStyle: TextStyle(
-          color: AppTheme.textSecondary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateField() {
-    return InkWell(
-      onTap: _selectDate,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        decoration: BoxDecoration(
-          color: AppTheme.cardLight,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppTheme.textFaint),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, color: AppTheme.primary),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تاريخ المصروف',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textMain,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondary),
-          ],
         ),
       ),
     );

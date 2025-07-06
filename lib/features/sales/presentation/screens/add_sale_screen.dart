@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/entities/sale_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/sales_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
 
@@ -185,10 +187,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                     children: [
                       _buildSectionTitle('معلومات المشتري'),
                       SizedBox(height: 12.h),
-                      _buildTextField(
+                      EnhancedTextField(
                         controller: _buyerNameController,
                         label: 'اسم المشتري',
                         icon: Icons.person,
+                        textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'يرجى إدخال اسم المشتري';
@@ -199,11 +202,15 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       SizedBox(height: 20.h),
                       _buildSectionTitle('تفاصيل البيع'),
                       SizedBox(height: 12.h),
-                      _buildTextField(
+                      EnhancedTextField(
                         controller: _chickCountController,
                         label: 'عدد الكتاكيت المباعة',
                         icon: Icons.sell,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'يرجى إدخال عدد الكتاكيت';
@@ -219,11 +226,17 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         },
                       ),
                       SizedBox(height: 12.h),
-                      _buildTextField(
+                      EnhancedTextField(
                         controller: _pricePerChickController,
                         label: 'سعر البيع للكتكوت (جنيه)',
                         icon: Icons.attach_money,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*'),
+                          ),
+                        ],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'يرجى إدخال سعر البيع';
@@ -240,11 +253,17 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       SizedBox(height: 12.h),
                       _buildTotalPriceCard(),
                       SizedBox(height: 12.h),
-                      _buildTextField(
+                      EnhancedTextField(
                         controller: _paidAmountController,
                         label: 'المبلغ المدفوع (جنيه)',
                         icon: Icons.payment,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*'),
+                          ),
+                        ],
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'يرجى إدخال المبلغ المدفوع';
@@ -262,16 +281,20 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       SizedBox(height: 12.h),
                       _buildRemainingAmountCard(),
                       SizedBox(height: 12.h),
-                      _buildDateField(),
+                      EnhancedDateField(
+                        label: 'تاريخ البيع',
+                        selectedDate: _selectedDate,
+                        onTap: _selectDate,
+                      ),
                       SizedBox(height: 20.h),
                       _buildSectionTitle('ملاحظات إضافية'),
                       SizedBox(height: 12.h),
-                      _buildTextField(
+                      EnhancedTextField(
                         controller: _noteController,
                         label: 'ملاحظات (اختياري)',
                         icon: Icons.note,
                         maxLines: 3,
-                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
                       ),
                       SizedBox(height: 20.h),
                       _buildInfoCard(availableForSale, totalSold, totalDeaths),
@@ -520,98 +543,6 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.primary),
-        filled: true,
-        fillColor: AppTheme.cardLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.textFaint),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.textFaint),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: AppTheme.error, width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        labelStyle: TextStyle(
-          color: AppTheme.textSecondary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateField() {
-    return InkWell(
-      onTap: _selectDate,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        decoration: BoxDecoration(
-          color: AppTheme.cardLight,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppTheme.textFaint),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, color: AppTheme.primary),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تاريخ البيع',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textMain,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondary),
-          ],
-        ),
       ),
     );
   }

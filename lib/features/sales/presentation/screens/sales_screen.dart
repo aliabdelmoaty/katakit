@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/entities/sale_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/sales_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
 import 'add_sale_screen.dart';
@@ -291,53 +292,19 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      margin: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppTheme.cardLight,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.textFaint.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-        decoration: InputDecoration(
-          hintText: 'البحث عن مشتري...',
-          hintStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 14.sp),
-          prefixIcon: Icon(Icons.search, color: AppTheme.primary, size: 20.w),
-          suffixIcon:
-              _searchQuery.isNotEmpty
-                  ? IconButton(
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                      });
-                    },
-                    icon: Icon(
-                      Icons.clear,
-                      color: AppTheme.textSecondary,
-                      size: 20.w,
-                    ),
-                  )
-                  : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 12.h,
-          ),
-        ),
-      ),
+    return EnhancedSearchField(
+      controller: _searchController,
+      hintText: 'البحث عن مشتري...',
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+        });
+      },
+      onClear: () {
+        setState(() {
+          _searchQuery = '';
+        });
+      },
     );
   }
 
