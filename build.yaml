@@ -1,0 +1,10 @@
+targets:
+  $default:
+    builders:
+      hive_generator|hive_generator:
+        generate_for:
+          - lib/core/entities/**.dart
+        options:
+          # Optional: Set the output directory for generated files
+          build_extensions:
+            '.dart': ['.g.dart']

@@ -1,0 +1,341 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/entities/batch_entity.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../cubit/batches_cubit.dart';
+import 'add_batch_screen.dart';
+import 'batch_details_screen.dart';
+
+class BatchesScreen extends StatefulWidget {
+  const BatchesScreen({super.key});
+
+  @override
+  State<BatchesScreen> createState() => _BatchesScreenState();
+}
+
+class _BatchesScreenState extends State<BatchesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<BatchesCubit>().loadBatches();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'دفعات الكتاكيت',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: AppTheme.textLight,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textLight,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: BlocBuilder<BatchesCubit, BatchesState>(
+        builder: (context, state) {
+          if (state is BatchesLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: AppTheme.primary,
+                    strokeWidth: 3.w,
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    'جاري التحميل...',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          } else if (state is BatchesLoaded) {
+            if (state.batches.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(24.w),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardLight,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.textFaint.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.inbox_outlined,
+                        size: 64.w,
+                        color: AppTheme.textFaint,
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+                    Text(
+                      'لا توجد دفعات',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        color: AppTheme.textMain,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'اضغط على زر الإضافة لإنشاء دفعة جديدة',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+            return ListView.builder(
+              padding: EdgeInsets.all(16.w),
+              itemCount: state.batches.length,
+              itemBuilder: (context, index) {
+                final batch = state.batches[index];
+                return BatchCard(batch: batch);
+              },
+            );
+          } else if (state is BatchesError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(24.w),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 64.w,
+                      color: AppTheme.error,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                  Text(
+                    'حدث خطأ',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    state.message,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 24.h),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<BatchesCubit>().loadBatches();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إعادة المحاولة'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.textLight,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 12.h,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddBatchScreen()),
+          );
+        },
+        backgroundColor: AppTheme.accent,
+        foregroundColor: AppTheme.textMain,
+        icon: const Icon(Icons.add),
+        label: const Text('دفعة جديدة'),
+      ),
+    );
+  }
+}
+
+class BatchCard extends StatelessWidget {
+  final BatchEntity batch;
+
+  const BatchCard({super.key, required this.batch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 16.h),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16.r),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BatchDetailsScreen(batch: batch),
+            ),
+          );
+        },
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      batch.name,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.textMain,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      '${batch.chickCount} كتكوت',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              _buildInfoRow(context, Icons.person, 'المورد', batch.supplier),
+              SizedBox(height: 8.h),
+              _buildInfoRow(
+                context,
+                Icons.attach_money,
+                'سعر الشراء',
+                '${batch.chickBuyPrice.toStringAsFixed(2)} جنيه',
+              ),
+              SizedBox(height: 8.h),
+              // _buildInfoRow(
+              //   context,
+              //   Icons.account_balance_wallet,
+              //   'التكلفة الفعلية',
+              //   '${batch.actualChickCost.toStringAsFixed(2)} جنيه',
+              // ),
+              // SizedBox(height: 8.h),
+              _buildInfoRow(
+                context,
+                Icons.calendar_today,
+                'التاريخ',
+                _formatDate(batch.date),
+              ),
+              SizedBox(height: 16.h),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppTheme.accent.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'إجمالي الشراء',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '${batch.totalBuyPrice.toStringAsFixed(2)} جنيه',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.accent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 16.w, color: AppTheme.textSecondary),
+        SizedBox(width: 8.w),
+        Text(
+          '$label: ',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppTheme.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textMain),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
