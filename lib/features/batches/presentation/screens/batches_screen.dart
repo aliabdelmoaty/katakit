@@ -15,10 +15,110 @@ class BatchesScreen extends StatefulWidget {
 }
 
 class _BatchesScreenState extends State<BatchesScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<BatchEntity> _filteredBatches = [];
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
     context.read<BatchesCubit>().loadBatches();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterBatches(String query, List<BatchEntity> allBatches) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredBatches = allBatches;
+        _isSearching = false;
+      });
+    } else {
+      setState(() {
+        _filteredBatches =
+            allBatches.where((batch) {
+              return batch.name.toLowerCase().contains(query.toLowerCase()) ||
+                  batch.supplier.toLowerCase().contains(query.toLowerCase());
+            }).toList();
+        _isSearching = true;
+      });
+    }
+  }
+
+  void _showDeleteConfirmation(BuildContext context, BatchEntity batch) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: AppTheme.error,
+                size: 24.w,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'تأكيد الحذف',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppTheme.textMain,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'هل أنت متأكد من حذف دفعة "${batch.name}"؟\nلا يمكن التراجع عن هذا الإجراء.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'إلغاء',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<BatchesCubit>().deleteBatch(batch.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم حذف الدفعة بنجاح'),
+                    backgroundColor: AppTheme.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: AppTheme.textLight,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+              child: Text('حذف'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -37,137 +137,228 @@ class _BatchesScreenState extends State<BatchesScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: BlocBuilder<BatchesCubit, BatchesState>(
-        builder: (context, state) {
-          if (state is BatchesLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: AppTheme.primary,
-                    strokeWidth: 3.w,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'جاري التحميل...',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
+      body: Column(
+        children: [
+          // Search Bar
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppTheme.cardLight,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.textFaint.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                final state = context.read<BatchesCubit>().state;
+                if (state is BatchesLoaded) {
+                  _filterBatches(value, state.batches);
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'البحث في الدفعات...',
+                hintStyle: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14.sp,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppTheme.textSecondary,
+                  size: 20.w,
+                ),
+                suffixIcon:
+                    _searchController.text.isNotEmpty
+                        ? IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            final state = context.read<BatchesCubit>().state;
+                            if (state is BatchesLoaded) {
+                              _filterBatches('', state.batches);
+                            }
+                          },
+                          icon: Icon(
+                            Icons.clear,
+                            color: AppTheme.textSecondary,
+                            size: 20.w,
+                          ),
+                        )
+                        : null,
+                filled: true,
+                fillColor: AppTheme.cardLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 12.h,
+                ),
               ),
-            );
-          } else if (state is BatchesLoaded) {
-            if (state.batches.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(24.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardLight,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.textFaint.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+            ),
+          ),
+          // Batches List
+          Expanded(
+            child: BlocBuilder<BatchesCubit, BatchesState>(
+              builder: (context, state) {
+                if (state is BatchesLoading) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          color: AppTheme.primary,
+                          strokeWidth: 3.w,
+                        ),
+                        SizedBox(height: 16.h),
+                        Text(
+                          'جاري التحميل...',
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: AppTheme.textSecondary),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (state is BatchesLoaded) {
+                  // Update filtered batches when data changes
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!_isSearching) {
+                      setState(() {
+                        _filteredBatches = state.batches;
+                      });
+                    } else {
+                      // Re-filter with current search query
+                      _filterBatches(_searchController.text, state.batches);
+                    }
+                  });
+
+                  // Use current filtered batches for display
+                  final batchesToShow =
+                      _isSearching ? _filteredBatches : state.batches;
+
+                  if (batchesToShow.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(24.w),
+                            decoration: BoxDecoration(
+                              color: AppTheme.cardLight,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.textFaint.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _isSearching
+                                  ? Icons.search_off
+                                  : Icons.inbox_outlined,
+                              size: 64.w,
+                              color: AppTheme.textFaint,
+                            ),
+                          ),
+                          SizedBox(height: 24.h),
+                          Text(
+                            _isSearching ? 'لا توجد نتائج' : 'لا توجد دفعات',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineMedium?.copyWith(
+                              color: AppTheme.textMain,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            _isSearching
+                                ? 'جرب البحث بكلمات مختلفة'
+                                : 'اضغط على زر الإضافة لإنشاء دفعة جديدة',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppTheme.textSecondary),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.inbox_outlined,
-                        size: 64.w,
-                        color: AppTheme.textFaint,
-                      ),
-                    ),
-                    SizedBox(height: 24.h),
-                    Text(
-                      'لا توجد دفعات',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(
-                        color: AppTheme.textMain,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'اضغط على زر الإضافة لإنشاء دفعة جديدة',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-            return ListView.builder(
-              padding: EdgeInsets.all(12.w),
-              itemCount: state.batches.length,
-              itemBuilder: (context, index) {
-                final batch = state.batches[index];
-                return BatchCard(batch: batch);
-              },
-            );
-          } else if (state is BatchesError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.error_outline,
-                      size: 64.w,
-                      color: AppTheme.error,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  Text(
-                    'حدث خطأ',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    state.message,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<BatchesCubit>().loadBatches();
+                    );
+                  }
+                  return ListView.builder(
+                    padding: EdgeInsets.all(12.w),
+                    itemCount: batchesToShow.length,
+                    itemBuilder: (context, index) {
+                      final batch = batchesToShow[index];
+                      return BatchCard(
+                        batch: batch,
+                        onDelete: () => _showDeleteConfirmation(context, batch),
+                      );
                     },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('إعادة المحاولة'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: AppTheme.textLight,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.w,
-                        vertical: 12.h,
-                      ),
+                  );
+                } else if (state is BatchesError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(24.w),
+                          decoration: BoxDecoration(
+                            color: AppTheme.error.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.error_outline,
+                            size: 64.w,
+                            color: AppTheme.error,
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                        Text(
+                          'حدث خطأ',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineMedium?.copyWith(
+                            color: AppTheme.error,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          state.message,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppTheme.textSecondary),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 24.h),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context.read<BatchesCubit>().loadBatches();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('إعادة المحاولة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: AppTheme.textLight,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.w,
+                              vertical: 12.h,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -187,8 +378,9 @@ class _BatchesScreenState extends State<BatchesScreen> {
 
 class BatchCard extends StatelessWidget {
   final BatchEntity batch;
+  final VoidCallback? onDelete;
 
-  const BatchCard({super.key, required this.batch});
+  const BatchCard({super.key, required this.batch, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +433,22 @@ class BatchCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onDelete != null) ...[
+                    SizedBox(width: 8.w),
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: AppTheme.error,
+                        size: 20.w,
+                      ),
+                      tooltip: 'حذف الدفعة',
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppTheme.error.withOpacity(0.1),
+                        padding: EdgeInsets.all(8.w),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               SizedBox(height: 12.h),
@@ -253,13 +461,6 @@ class BatchCard extends StatelessWidget {
                 '${batch.chickBuyPrice.toStringAsFixed(2)} جنيه',
               ),
               SizedBox(height: 6.h),
-              // _buildInfoRow(
-              //   context,
-              //   Icons.account_balance_wallet,
-              //   'التكلفة الفعلية',
-              //   '${batch.actualChickCost.toStringAsFixed(2)} جنيه',
-              // ),
-              // SizedBox(height: 8.h),
               _buildInfoRow(
                 context,
                 Icons.calendar_today,
