@@ -180,12 +180,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               )
               : ListView(
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.all(16.w),
                 children: [
                   _buildOverviewCard(),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 16.h),
                   _buildFinancialCard(),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 16.h),
                   _buildDetailsCard(),
                 ],
               ),
@@ -197,12 +197,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('نظرة عامة', Icons.analytics),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
@@ -224,7 +224,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(
@@ -235,7 +235,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     Icons.sell,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: _buildStatItem(
                     'المتبقي',
@@ -262,12 +262,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('الأمور المالية', Icons.account_balance_wallet),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildFinancialRow(
               'إجمالي الشراء',
               '${_statistics!.totalBuyPrice.toStringAsFixed(2)} جنيه',
@@ -283,7 +283,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               '${_statistics!.totalSalesAmount.toStringAsFixed(2)} جنيه',
               AppTheme.accent,
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
@@ -334,18 +334,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('تفاصيل إضافية', Icons.info_outline),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildDetailRow(
               'التكلفة الفعلية للكتكوت',
               '${_statistics!.actualCostPerChick.toStringAsFixed(2)} جنيه',
               AppTheme.info,
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(
@@ -356,7 +356,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     Icons.trending_down,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: _buildPercentageItem(
                     'نسبة المبيعات',

@@ -115,10 +115,10 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                     final profitLoss = totalSalesAmount - totalCost;
 
                     return ListView(
-                      padding: EdgeInsets.all(20.w),
+                      padding: EdgeInsets.all(16.w),
                       children: [
                         _buildInfoCard(),
-                        SizedBox(height: 20.h),
+                        SizedBox(height: 16.h),
                         _buildStatisticsCard(
                           totalSold,
                           totalDeaths,
@@ -127,7 +127,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                           totalSalesAmount,
                           profitLoss,
                         ),
-                        SizedBox(height: 20.h),
+                        SizedBox(height: 16.h),
                         _buildActionsCard(context),
                       ],
                     );
@@ -146,12 +146,12 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('معلومات الدفعة', Icons.info_outline),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildInfoRow('اسم الدفعة', widget.batch.name, Icons.label),
             _buildInfoRow('المورد', widget.batch.supplier, Icons.person),
             _buildInfoRow(
@@ -189,12 +189,12 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('الإحصائيات المحدثة', Icons.analytics),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
@@ -216,7 +216,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(
@@ -227,7 +227,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                     Icons.inventory,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: _buildStatItem(
                     'المصروفات',
@@ -238,7 +238,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildStatisticRow(
               'إجمالي سعر الشراء',
               '${widget.batch.totalBuyPrice.toStringAsFixed(2)} جنيه',
@@ -265,12 +265,12 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('الإجراءات', Icons.settings),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
@@ -310,7 +310,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             Row(
               children: [
                 Expanded(
@@ -330,7 +330,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                     },
                   ),
                 ),
-                SizedBox(width: 12.w),
+                SizedBox(width: 8.w),
                 Expanded(
                   child: _buildActionButton(
                     context,

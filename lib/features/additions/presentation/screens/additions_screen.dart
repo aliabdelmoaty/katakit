@@ -65,65 +65,69 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
               children: [
                 _buildSummaryCard(state.totalCost),
                 Expanded(
-                  child: state.additions.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(24.w),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.cardLight,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.textFaint.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                  child:
+                      state.additions.isEmpty
+                          ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(20.w),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.cardLight,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.textFaint.withOpacity(
+                                          0.1,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.receipt_long,
+                                    size: 56.w,
+                                    color: AppTheme.textFaint,
+                                  ),
                                 ),
-                                child: Icon(
-                                  Icons.receipt_long,
-                                  size: 64.w,
-                                  color: AppTheme.textFaint,
+                                SizedBox(height: 16.h),
+                                Text(
+                                  'لا توجد مصروفات',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium?.copyWith(
+                                    color: AppTheme.textMain,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 24.h),
-                              Text(
-                                'لا توجد مصروفات',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: AppTheme.textMain,
-                                  fontWeight: FontWeight.bold,
+                                SizedBox(height: 6.h),
+                                Text(
+                                  'اضغط على زر الإضافة لتسجيل مصروف جديد',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: AppTheme.textSecondary),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Text(
-                                'اضغط على زر الإضافة لتسجيل مصروف جديد',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppTheme.textSecondary,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                              ],
+                            ),
+                          )
+                          : ListView.builder(
+                            padding: EdgeInsets.all(12.w),
+                            itemCount: state.additions.length,
+                            itemBuilder: (context, index) {
+                              final addition = state.additions[index];
+                              return AdditionCard(
+                                addition: addition,
+                                onDelete: () {
+                                  context.read<AdditionsCubit>().deleteAddition(
+                                    addition.id,
+                                    widget.batch.id,
+                                  );
+                                },
+                              );
+                            },
                           ),
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.all(16.w),
-                          itemCount: state.additions.length,
-                          itemBuilder: (context, index) {
-                            final addition = state.additions[index];
-                            return AdditionCard(
-                              addition: addition,
-                              onDelete: () {
-                                context.read<AdditionsCubit>().deleteAddition(
-                                  addition.id,
-                                  widget.batch.id,
-                                );
-                              },
-                            );
-                          },
-                        ),
                 ),
               ],
             );
@@ -172,7 +176,10 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: AppTheme.textLight,
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 12.h,
+                      ),
                     ),
                   ),
                 ],
@@ -202,13 +209,11 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
   Widget _buildSummaryCard(double totalCost) {
     final actualCostPerChick = _calculateActualCostPerChick(totalCost);
     return Card(
-      margin: EdgeInsets.all(16.w),
+      margin: EdgeInsets.all(12.w),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -236,7 +241,7 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -252,7 +257,9 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
                     SizedBox(height: 4.h),
                     Text(
                       '${totalCost.toStringAsFixed(2)} جنيه',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -280,7 +287,9 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
                       SizedBox(height: 4.h),
                       Text(
                         '${actualCostPerChick.toStringAsFixed(2)} جنيه',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
                           color: AppTheme.accent,
                           fontWeight: FontWeight.bold,
                         ),
@@ -317,13 +326,11 @@ class AdditionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 8.h),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(12.w),
         child: Row(
           children: [
             Container(
@@ -332,13 +339,9 @@ class AdditionCard extends StatelessWidget {
                 color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(
-                Icons.receipt,
-                color: AppTheme.primary,
-                size: 24.w,
-              ),
+              child: Icon(Icons.receipt, color: AppTheme.primary, size: 24.w),
             ),
-            SizedBox(width: 16.w),
+                          SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

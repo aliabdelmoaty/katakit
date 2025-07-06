@@ -146,7 +146,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                     padding: EdgeInsets.only(
                                       left: 16.w,
                                       right: 16.w,
-                                      top: _searchQuery.isNotEmpty ? 8.h : 8.h,
+                                      top: _searchQuery.isNotEmpty ? 4.h : 4.h,
                                       bottom:
                                           80.h, // مساحة للـ FloatingActionButton
                                     ),
@@ -292,7 +292,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      margin: EdgeInsets.all(16.w),
+      margin: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: AppTheme.cardLight,
         borderRadius: BorderRadius.circular(12.r),
@@ -455,35 +455,35 @@ class _SalesScreenState extends State<SalesScreen> {
     final salesPercentage = (totalSoldCount / widget.batch.chickCount) * 100;
 
     return Card(
-      margin: EdgeInsets.all(10.r),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      margin: EdgeInsets.all(6.r),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Padding(
-        padding: EdgeInsets.all(10.r),
+        padding: EdgeInsets.all(12.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(8.w),
+                  padding: EdgeInsets.all(6.w),
                   decoration: BoxDecoration(
                     color: AppTheme.accent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(6.r),
                   ),
-                  child: Icon(Icons.sell, color: AppTheme.accent, size: 20.w),
+                  child: Icon(Icons.sell, color: AppTheme.accent, size: 16.w),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 8.w),
                 Text(
                   'ملخص المبيعات',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppTheme.textMain,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
                 Expanded(
@@ -492,16 +492,14 @@ class _SalesScreenState extends State<SalesScreen> {
                     children: [
                       Text(
                         'إجمالي المبيعات',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary,
                         ),
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: 2.h),
                       Text(
                         '${totalSalesAmount.toStringAsFixed(2)} جنيه',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: AppTheme.accent,
                           fontWeight: FontWeight.bold,
                         ),
@@ -510,10 +508,10 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.all(12.w),
+                  padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
                     color: AppTheme.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(8.r),
                     border: Border.all(
                       color: AppTheme.success.withOpacity(0.3),
                       width: 1,
@@ -525,14 +523,13 @@ class _SalesScreenState extends State<SalesScreen> {
                         'المباع',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: AppTheme.textSecondary,
+                          fontSize: 10.sp,
                         ),
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: 2.h),
                       Text(
                         '$totalSoldCount كتكوت',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.success,
                           fontWeight: FontWeight.bold,
                         ),
@@ -542,7 +539,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h),
             Row(
               children: [
                 Expanded(
@@ -552,7 +549,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     availableForSale > 0 ? AppTheme.primary : AppTheme.error,
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 6.w),
                 Expanded(
                   child: _buildInfoItem(
                     'الوفيات',
@@ -562,7 +559,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 6.h),
             Row(
               children: [
                 Expanded(
@@ -572,7 +569,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     AppTheme.info,
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 6.w),
                 Expanded(
                   child: _buildInfoItem(
                     'المتبقي',
@@ -590,24 +587,25 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Widget _buildInfoItem(String label, String value, Color color) {
     return Container(
-      padding: EdgeInsets.all(10.r),
+      padding: EdgeInsets.all(6.r),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(6.r),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         children: [
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppTheme.textSecondary,
+              fontSize: 10.sp,
+            ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 2.h),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
             ),
@@ -633,25 +631,25 @@ class SaleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: 8.h),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(12.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(12.w),
+                  padding: EdgeInsets.all(10.w),
                   decoration: BoxDecoration(
                     color: AppTheme.accent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
-                  child: Icon(Icons.person, color: AppTheme.accent, size: 24.w),
+                  child: Icon(Icons.person, color: AppTheme.accent, size: 20.w),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,7 +703,7 @@ class SaleCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             Row(
               children: [
                 Expanded(
@@ -715,7 +713,7 @@ class SaleCard extends StatelessWidget {
                     AppTheme.primary,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: _buildDetailItem(
                     'المدفوع',
@@ -755,7 +753,7 @@ class SaleCard extends StatelessWidget {
                 ),
               ),
             ],
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

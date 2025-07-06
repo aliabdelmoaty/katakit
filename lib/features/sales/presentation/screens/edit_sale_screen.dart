@@ -76,14 +76,14 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(16.w),
           children: [
             _buildSaleInfoCard(),
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
             _buildPaymentStatusCard(),
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
             _buildAdditionalPaymentSection(),
-            SizedBox(height: 32.h),
+            SizedBox(height: 24.h),
             SizedBox(
               width: double.infinity,
               height: 56.h,
@@ -129,12 +129,12 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('معلومات عملية البيع', Icons.sell),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildInfoRow('المشتري', widget.sale.buyerName, Icons.person),
             _buildInfoRow(
               'عدد الكتاكيت',
@@ -173,12 +173,12 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildCardHeader('حالة الدفع', Icons.payment),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
@@ -189,7 +189,7 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
                     Icons.check_circle,
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: _buildPaymentItem(
                     'الباقي',
@@ -372,7 +372,7 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
                           AppTheme.success,
                         ),
                       ),
-                      SizedBox(width: 16.w),
+                      SizedBox(width: 12.w),
                       Expanded(
                         child: _buildInfoItem(
                           'الباقي',

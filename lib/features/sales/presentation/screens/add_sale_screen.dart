@@ -181,10 +181,10 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 return Form(
                   key: _formKey,
                   child: ListView(
-                    padding: EdgeInsets.all(20.w),
+                    padding: EdgeInsets.all(16.w),
                     children: [
                       _buildSectionTitle('معلومات المشتري'),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _buyerNameController,
                         label: 'اسم المشتري',
@@ -196,9 +196,9 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
                       _buildSectionTitle('تفاصيل البيع'),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _chickCountController,
                         label: 'عدد الكتاكيت المباعة',
@@ -218,7 +218,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _pricePerChickController,
                         label: 'سعر البيع للكتكوت (جنيه)',
@@ -235,11 +235,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
                       _buildSectionTitle('المدفوعات'),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTotalPriceCard(),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _paidAmountController,
                         label: 'المبلغ المدفوع (جنيه)',
@@ -259,13 +259,13 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildRemainingAmountCard(),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildDateField(),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
                       _buildSectionTitle('ملاحظات إضافية'),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _noteController,
                         label: 'ملاحظات (اختياري)',
@@ -273,9 +273,9 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                         maxLines: 3,
                         keyboardType: TextInputType.multiline,
                       ),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
                       _buildInfoCard(availableForSale, totalSold, totalDeaths),
-                      SizedBox(height: 32.h),
+                      SizedBox(height: 24.h),
                       SizedBox(
                         width: double.infinity,
                         height: 56.h,

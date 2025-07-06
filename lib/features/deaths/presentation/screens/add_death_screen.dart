@@ -135,10 +135,10 @@ class _AddDeathScreenState extends State<AddDeathScreen> {
                 return Form(
                   key: _formKey,
                   child: ListView(
-                    padding: EdgeInsets.all(20.w),
+                    padding: EdgeInsets.all(16.w),
                     children: [
                       _buildSectionTitle('تفاصيل الوفيات'),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildTextField(
                         controller: _countController,
                         label: 'عدد الوفيات',
@@ -158,11 +158,11 @@ class _AddDeathScreenState extends State<AddDeathScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 12.h),
                       _buildDateField(),
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
                       _buildInfoCard(availableForDeaths, totalSold, totalDeaths),
-                      SizedBox(height: 32.h),
+                      SizedBox(height: 24.h),
                       Container(
                         width: double.infinity,
                         height: 56.h,

@@ -67,7 +67,8 @@ class _DeathsScreenState extends State<DeathsScreen> {
           builder: (context, deathsState) {
             return BlocBuilder<SalesCubit, SalesState>(
               builder: (context, salesState) {
-                if (deathsState is DeathsLoading || salesState is SalesLoading) {
+                if (deathsState is DeathsLoading ||
+                    salesState is SalesLoading) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -79,9 +80,8 @@ class _DeathsScreenState extends State<DeathsScreen> {
                         SizedBox(height: 16.h),
                         Text(
                           'جاري التحميل...',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: AppTheme.textSecondary),
                         ),
                       ],
                     ),
@@ -92,7 +92,7 @@ class _DeathsScreenState extends State<DeathsScreen> {
                   if (salesState is SalesLoaded) {
                     totalSold = salesState.totalSoldCount;
                   }
-                  
+
                   final availableForDeaths = _calculateAvailableForDeaths(
                     totalSold,
                     deathsState.totalDeathsCount,
@@ -106,65 +106,71 @@ class _DeathsScreenState extends State<DeathsScreen> {
                         availableForDeaths,
                       ),
                       Expanded(
-                        child: deathsState.deaths.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(24.w),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.cardLight,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.textFaint.withOpacity(0.1),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
+                        child:
+                            deathsState.deaths.isEmpty
+                                ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(20.w),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.cardLight,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppTheme.textFaint
+                                                  .withOpacity(0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.remove_circle_outline,
+                                          size: 56.w,
+                                          color: AppTheme.textFaint,
+                                        ),
                                       ),
-                                      child: Icon(
-                                        Icons.remove_circle_outline,
-                                        size: 64.w,
-                                        color: AppTheme.textFaint,
+                                      SizedBox(height: 16.h),
+                                      Text(
+                                        'لا توجد وفيات مسجلة',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.headlineMedium?.copyWith(
+                                          color: AppTheme.textMain,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(height: 24.h),
-                                    Text(
-                                      'لا توجد وفيات مسجلة',
-                                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                        color: AppTheme.textMain,
-                                        fontWeight: FontWeight.bold,
+                                      SizedBox(height: 6.h),
+                                      Text(
+                                        'اضغط على زر الإضافة لتسجيل وفيات جديدة',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      'اضغط على زر الإضافة لتسجيل وفيات جديدة',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: AppTheme.textSecondary,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                )
+                                                            : ListView.builder(
+                                padding: EdgeInsets.all(12.w),
+                                  itemCount: deathsState.deaths.length,
+                                  itemBuilder: (context, index) {
+                                    final death = deathsState.deaths[index];
+                                    return DeathCard(
+                                      death: death,
+                                      onDelete: () {
+                                        context.read<DeathsCubit>().deleteDeath(
+                                          death.id,
+                                          widget.batch.id,
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                              )
-                            : ListView.builder(
-                                padding: EdgeInsets.all(16.w),
-                                itemCount: deathsState.deaths.length,
-                                itemBuilder: (context, index) {
-                                  final death = deathsState.deaths[index];
-                                  return DeathCard(
-                                    death: death,
-                                    onDelete: () {
-                                      context.read<DeathsCubit>().deleteDeath(
-                                        death.id,
-                                        widget.batch.id,
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
                       ),
                     ],
                   );
@@ -188,7 +194,9 @@ class _DeathsScreenState extends State<DeathsScreen> {
                         SizedBox(height: 24.h),
                         Text(
                           'حدث خطأ',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineMedium?.copyWith(
                             color: AppTheme.error,
                             fontWeight: FontWeight.bold,
                           ),
@@ -196,22 +204,26 @@ class _DeathsScreenState extends State<DeathsScreen> {
                         SizedBox(height: 8.h),
                         Text(
                           deathsState.message,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppTheme.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                         SizedBox(height: 24.h),
                         ElevatedButton.icon(
                           onPressed: () {
-                            context.read<DeathsCubit>().loadDeaths(widget.batch.id);
+                            context.read<DeathsCubit>().loadDeaths(
+                              widget.batch.id,
+                            );
                           },
                           icon: const Icon(Icons.refresh),
                           label: const Text('إعادة المحاولة'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
                             foregroundColor: AppTheme.textLight,
-                            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.w,
+                              vertical: 12.h,
+                            ),
                           ),
                         ),
                       ],
@@ -231,30 +243,46 @@ class _DeathsScreenState extends State<DeathsScreen> {
               // حساب العدد المتاح لتسجيل الوفيات
               int totalSold = 0;
               int totalDeaths = 0;
-              
+
               if (salesState is SalesLoaded) {
                 totalSold = salesState.totalSoldCount;
               }
-              
+
               if (deathsState is DeathsLoaded) {
                 totalDeaths = deathsState.totalDeathsCount;
               }
-              
-              final availableForDeaths = _calculateAvailableForDeaths(totalSold, totalDeaths);
+
+              final availableForDeaths = _calculateAvailableForDeaths(
+                totalSold,
+                totalDeaths,
+              );
 
               return FloatingActionButton.extended(
-                onPressed: availableForDeaths > 0 ? () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddDeathScreen(batch: widget.batch),
-                    ),
-                  );
-                } : null,
-                backgroundColor: availableForDeaths > 0 ? AppTheme.accent : AppTheme.textFaint,
-                foregroundColor: availableForDeaths > 0 ? AppTheme.textMain : AppTheme.textSecondary,
+                onPressed:
+                    availableForDeaths > 0
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      AddDeathScreen(batch: widget.batch),
+                            ),
+                          );
+                        }
+                        : null,
+                backgroundColor:
+                    availableForDeaths > 0
+                        ? AppTheme.accent
+                        : AppTheme.textFaint,
+                foregroundColor:
+                    availableForDeaths > 0
+                        ? AppTheme.textMain
+                        : AppTheme.textSecondary,
                 icon: Icon(Icons.add),
-                label: Text(availableForDeaths > 0 ? 'وفاة جديدة' : 'لا يوجد متاح'),
+                label: Text(
+                  availableForDeaths > 0 ? 'وفاة جديدة' : 'لا يوجد متاح',
+                ),
               );
             },
           );
@@ -319,7 +347,9 @@ class _DeathsScreenState extends State<DeathsScreen> {
                       SizedBox(height: 4.h),
                       Text(
                         '$totalDeathsCount كتكوت',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
                           color: AppTheme.error,
                           fontWeight: FontWeight.bold,
                         ),
@@ -348,8 +378,13 @@ class _DeathsScreenState extends State<DeathsScreen> {
                       SizedBox(height: 4.h),
                       Text(
                         '$availableForDeaths كتكوت',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: availableForDeaths > 0 ? AppTheme.success : AppTheme.error,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color:
+                              availableForDeaths > 0
+                                  ? AppTheme.success
+                                  : AppTheme.error,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -410,18 +445,15 @@ class _DeathsScreenState extends State<DeathsScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary),
           ),
           SizedBox(height: 4.h),
           Text(

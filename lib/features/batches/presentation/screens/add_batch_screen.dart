@@ -95,10 +95,10 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(16.w),
           children: [
             _buildSectionTitle('معلومات الدفعة'),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _nameController,
               label: 'اسم الدفعة',
@@ -110,7 +110,7 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _supplierController,
               label: 'اسم المورد',
@@ -122,11 +122,11 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildDateField(),
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
             _buildSectionTitle('تفاصيل الكتاكيت'),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _chickCountController,
               label: 'عدد الكتاكيت',
@@ -143,7 +143,7 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _chickBuyPriceController,
               label: 'سعر شراء الكتكوت (جنيه)',
@@ -160,9 +160,9 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
             _buildSectionTitle('ملاحظات إضافية'),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _noteController,
               label: 'ملاحظات (اختياري)',
@@ -170,7 +170,7 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
               maxLines: 3,
               keyboardType: TextInputType.multiline,
             ),
-            SizedBox(height: 32.h),
+            SizedBox(height: 24.h),
             SizedBox(
               width: double.infinity,
               height: 56.h,

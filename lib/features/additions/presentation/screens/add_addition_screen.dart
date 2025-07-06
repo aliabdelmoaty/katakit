@@ -87,10 +87,10 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(16.w),
           children: [
             _buildSectionTitle('تفاصيل المصروف'),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _nameController,
               label: 'اسم المصروف',
@@ -102,7 +102,7 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildTextField(
               controller: _costController,
               label: 'التكلفة (جنيه)',
@@ -119,9 +119,9 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
                 return null;
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
             _buildDateField(),
-            SizedBox(height: 32.h),
+            SizedBox(height: 24.h),
             Container(
               width: double.infinity,
               height: 56.h,

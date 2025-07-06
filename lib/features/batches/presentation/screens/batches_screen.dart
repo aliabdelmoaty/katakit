@@ -106,7 +106,7 @@ class _BatchesScreenState extends State<BatchesScreen> {
               );
             }
             return ListView.builder(
-              padding: EdgeInsets.all(16.w),
+              padding: EdgeInsets.all(12.w),
               itemCount: state.batches.length,
               itemBuilder: (context, index) {
                 final batch = state.batches[index];
@@ -193,7 +193,7 @@ class BatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.only(bottom: 16.h),
+      margin: EdgeInsets.only(bottom: 12.h),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: InkWell(
@@ -207,7 +207,7 @@ class BatchCard extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(16.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -243,16 +243,16 @@ class BatchCard extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 12.h),
               _buildInfoRow(context, Icons.person, 'المورد', batch.supplier),
-              SizedBox(height: 8.h),
+              SizedBox(height: 6.h),
               _buildInfoRow(
                 context,
                 Icons.attach_money,
                 'سعر الشراء',
                 '${batch.chickBuyPrice.toStringAsFixed(2)} جنيه',
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 6.h),
               // _buildInfoRow(
               //   context,
               //   Icons.account_balance_wallet,
@@ -266,7 +266,7 @@ class BatchCard extends StatelessWidget {
                 'التاريخ',
                 _formatDate(batch.date),
               ),
-              SizedBox(height: 16.h),
+              SizedBox(height: 12.h),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16.w),
