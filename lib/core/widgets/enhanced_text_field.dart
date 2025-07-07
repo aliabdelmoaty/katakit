@@ -115,6 +115,9 @@ class _EnhancedTextFieldState extends State<EnhancedTextField> {
         autofocus: widget.autofocus,
         readOnly: widget.readOnly,
         onEditingComplete: widget.onEditingComplete,
+        onTapOutside: (_) {
+          _focusNode.unfocus();
+        },
         onChanged: widget.onChanged,
         onFieldSubmitted:
             widget.onSubmitted != null ? (_) => widget.onSubmitted!() : null,
@@ -398,56 +401,55 @@ class _EnhancedSearchFieldState extends State<EnhancedSearchField> {
       decoration: BoxDecoration(
         color: AppTheme.cardLight,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: _isFocused
-            ? [
-                BoxShadow(
-                  color: AppTheme.primary.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: AppTheme.textFaint.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+        boxShadow:
+            _isFocused
+                ? [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                : [
+                  BoxShadow(
+                    color: AppTheme.textFaint.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
       ),
       child: TextField(
         controller: widget.controller,
         focusNode: _focusNode,
         autofocus: widget.autofocus,
         onChanged: widget.onChanged,
+
+        onTapOutside: (_) {
+          _focusNode.unfocus();
+        },
         textInputAction: TextInputAction.search,
         onSubmitted: (_) {
           _focusNode.unfocus();
         },
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 14.sp,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: AppTheme.primary,
-            size: 20.w,
-          ),
-          suffixIcon: widget.controller.text.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    widget.controller.clear();
-                    widget.onClear?.call();
-                    _focusNode.requestFocus();
-                  },
-                  icon: Icon(
-                    Icons.clear,
-                    color: AppTheme.textSecondary,
-                    size: 20.w,
-                  ),
-                )
-              : null,
+          hintStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 14.sp),
+          prefixIcon: Icon(Icons.search, color: AppTheme.primary, size: 20.w),
+          suffixIcon:
+              widget.controller.text.isNotEmpty
+                  ? IconButton(
+                    onPressed: () {
+                      widget.controller.clear();
+                      widget.onClear?.call();
+                      _focusNode.requestFocus();
+                    },
+                    icon: Icon(
+                      Icons.clear,
+                      color: AppTheme.textSecondary,
+                      size: 20.w,
+                    ),
+                  )
+                  : null,
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 16.w,

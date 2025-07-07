@@ -21,46 +21,41 @@ class SalesScreen extends StatefulWidget {
   State<SalesScreen> createState() => _SalesScreenState();
 }
 
-class _SalesScreenState extends State<SalesScreen> {
+class _SalesScreenState extends State<SalesScreen>
+    with TickerProviderStateMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  bool _isKeyboardVisible = false;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     context.read<SalesCubit>().loadSales(widget.batch.id);
     context.read<DeathsCubit>().loadDeaths(widget.batch.id);
-    SyncService().userNoticeStream.listen((msg) {
-      if (mounted && msg.isNotEmpty) {
-        Color bgColor = Colors.blue;
-        if (msg.contains('خطأ') || msg.contains('error')) {
-          bgColor = Colors.red;
-        } else if (msg.contains('تمت') ||
-            msg.contains('اكتملت') ||
-            msg.contains('نجاح')) {
-          bgColor = Colors.green;
-        } else if (msg.contains('لا يوجد اتصال')) {
-          bgColor = Colors.orange;
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: bgColor));
-      }
-    });
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
-  // حساب العدد المتاح للبيع بناءً على الوفيات السابقة
   int _calculateAvailableForSale(int totalSold, int totalDeaths) {
     return widget.batch.chickCount - totalDeaths - totalSold;
   }
 
-  // تصفية المبيعات بناءً على اسم المشتري
   List<SaleEntity> _filterSales(List<SaleEntity> sales) {
     if (_searchQuery.isEmpty) {
       return sales;
@@ -75,7 +70,13 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if keyboard is visible
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    _isKeyboardVisible = keyboardHeight > 0;
+
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldLight,
+      resizeToAvoidBottomInset: true, // Allow resizing when keyboard appears
       appBar: AppBar(
         title: Text(
           'مبيعات ${widget.batch.name}',
@@ -88,59 +89,14 @@ class _SalesScreenState extends State<SalesScreen> {
         foregroundColor: AppTheme.textLight,
         elevation: 0,
         centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(32),
-          child:
-              widget.syncStatusStream != null
-                  ? StreamBuilder<SyncStatus>(
-                    stream: widget.syncStatusStream,
-                    builder: (context, snapshot) {
-                      final status = snapshot.data;
-                      if (status == null) return const SizedBox(height: 0);
-                      IconData icon;
-                      String text;
-                      Color color;
-                      switch (status) {
-                        case SyncStatus.synced:
-                          icon = Icons.check_circle;
-                          text = 'تمت المزامنة';
-                          color = AppTheme.success;
-                          break;
-                        case SyncStatus.syncing:
-                          icon = Icons.sync;
-                          text = 'جاري المزامنة...';
-                          color = AppTheme.info;
-                          break;
-                        case SyncStatus.offline:
-                          icon = Icons.wifi_off;
-                          text = 'أوفلاين - في انتظار الاتصال';
-                          color = AppTheme.warning;
-                          break;
-                        case SyncStatus.error:
-                          icon = Icons.error;
-                          text = 'خطأ في المزامنة';
-                          color = AppTheme.error;
-                          break;
-                        default:
-                          icon = Icons.sync;
-                          text = '';
-                          color = AppTheme.info;
-                      }
-                      return Container(
-                        height: 32,
-                        color: color.withOpacity(0.08),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(icon, color: color, size: 18),
-                            const SizedBox(width: 8),
-                            Text(text, style: TextStyle(color: color)),
-                          ],
-                        ),
-                      );
-                    },
-                  )
-                  : const SizedBox(height: 0),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.8)],
+            ),
+          ),
         ),
       ),
       body: MultiBlocListener(
@@ -166,27 +122,8 @@ class _SalesScreenState extends State<SalesScreen> {
               builder: (context, deathsState) {
                 if (salesState is SalesLoading ||
                     deathsState is DeathsLoading) {
-                  return SafeArea(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            color: AppTheme.primary,
-                            strokeWidth: 3.w,
-                          ),
-                          SizedBox(height: 10.h),
-                          Text(
-                            'جاري التحميل...',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(color: AppTheme.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildLoadingState();
                 } else if (salesState is SalesLoaded) {
-                  // حساب العدد المتاح للبيع
                   int totalDeaths = 0;
                   if (deathsState is DeathsLoaded) {
                     totalDeaths = deathsState.totalDeathsCount;
@@ -197,115 +134,85 @@ class _SalesScreenState extends State<SalesScreen> {
                     totalDeaths,
                   );
 
-                  // تصفية المبيعات بناءً على البحث
                   final filteredSales = _filterSales(salesState.sales);
 
-                  return SafeArea(
+                  return FadeTransition(
+                    opacity: _fadeAnimation,
                     child: Column(
                       children: [
+                        // Search Bar - Always visible at top
                         _buildSearchBar(),
-                        // إظهار ملخص البيع فقط عندما لا يكون هناك بحث
-                        if (_searchQuery.isEmpty)
-                          _buildSummaryCard(
-                            salesState.totalSoldCount,
-                            salesState.totalSalesAmount,
-                            totalDeaths,
-                            availableForSale,
-                          ),
+
+                        // Scrollable content
                         Expanded(
-                          child:
-                              filteredSales.isEmpty
-                                  ? _buildEmptyState()
-                                  : ListView.builder(
-                                    padding: EdgeInsets.only(
-                                      left: 16.w,
-                                      right: 16.w,
-                                      top: _searchQuery.isNotEmpty ? 4.h : 4.h,
-                                      bottom:
-                                          80.h, // مساحة للـ FloatingActionButton
-                                    ),
-                                    itemCount: filteredSales.length,
-                                    itemBuilder: (context, index) {
-                                      final sale = filteredSales[index];
-                                      return SaleCard(
-                                        sale: sale,
-                                        onDelete: () {
-                                          context.read<SalesCubit>().deleteSale(
-                                            sale.id,
-                                            widget.batch.id,
-                                          );
-                                        },
-                                        batch: widget.batch,
-                                      );
-                                    },
+                          child: CustomScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            slivers: [
+                              // Summary Card (only when not searching and keyboard is hidden)
+                              if (_searchQuery.isEmpty && !_isKeyboardVisible)
+                                SliverToBoxAdapter(
+                                  child: _buildSummaryCard(
+                                    salesState.totalSoldCount,
+                                    salesState.totalSalesAmount,
+                                    totalDeaths,
+                                    availableForSale,
                                   ),
+                                ),
+
+                              // Sales List or Empty State
+                              filteredSales.isEmpty
+                                  ? SliverFillRemaining(
+                                    hasScrollBody: false,
+                                    child: _buildEmptyState(),
+                                  )
+                                  : SliverPadding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12.w,
+                                    ),
+                                    sliver: SliverList(
+                                      delegate: SliverChildBuilderDelegate((
+                                        context,
+                                        index,
+                                      ) {
+                                        final sale = filteredSales[index];
+                                        return AnimatedContainer(
+                                          duration: Duration(
+                                            milliseconds: 300 + (index * 100),
+                                          ),
+                                          curve: Curves.easeOutBack,
+                                          child: SaleCard(
+                                            sale: sale,
+                                            onDelete: () {
+                                              _showDeleteConfirmation(
+                                                context,
+                                                sale,
+                                              );
+                                            },
+                                            batch: widget.batch,
+                                            index: index,
+                                            isCompact:
+                                                _isKeyboardVisible, // Pass keyboard state
+                                          ),
+                                        );
+                                      }, childCount: filteredSales.length),
+                                    ),
+                                  ),
+
+                              // Bottom padding - adjust based on keyboard visibility
+                              SliverToBoxAdapter(
+                                child: SizedBox(
+                                  height: _isKeyboardVisible ? 20.h : 80.h,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   );
                 } else if (salesState is SalesError) {
-                  return SafeArea(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 80.h,
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(24.w),
-                              decoration: BoxDecoration(
-                                color: AppTheme.error.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.error_outline,
-                                size: 64.w,
-                                color: AppTheme.error,
-                              ),
-                            ),
-                            SizedBox(height: 15.h),
-                            Text(
-                              'حدث خطأ',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.headlineMedium?.copyWith(
-                                color: AppTheme.error,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              salesState.message,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppTheme.textSecondary),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 24.h),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                context.read<SalesCubit>().loadSales(
-                                  widget.batch.id,
-                                );
-                              },
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('إعادة المحاولة'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primary,
-                                foregroundColor: AppTheme.textLight,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 24.w,
-                                  vertical: 12.h,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildErrorState(salesState.message);
                 }
                 return const SizedBox.shrink();
               },
@@ -313,98 +220,450 @@ class _SalesScreenState extends State<SalesScreen> {
           },
         ),
       ),
-      floatingActionButton: BlocBuilder<SalesCubit, SalesState>(
-        builder: (context, salesState) {
-          return BlocBuilder<DeathsCubit, DeathsState>(
-            builder: (context, deathsState) {
-              // حساب العدد المتاح للبيع
-              int totalSold = 0;
-              int totalDeaths = 0;
+      // Hide FAB when keyboard is visible
+      floatingActionButton:
+          _isKeyboardVisible ? null : _buildFloatingActionButton(),
+    );
+  }
 
-              if (salesState is SalesLoaded) {
-                totalSold = salesState.totalSoldCount;
-              }
-
-              if (deathsState is DeathsLoaded) {
-                totalDeaths = deathsState.totalDeathsCount;
-              }
-
-              final availableForSale = _calculateAvailableForSale(
-                totalSold,
-                totalDeaths,
-              );
-
-              return FloatingActionButton.extended(
-                onPressed:
-                    availableForSale > 0
-                        ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      AddSaleScreen(batch: widget.batch),
-                            ),
-                          );
-                        }
-                        : null,
-                backgroundColor:
-                    availableForSale > 0 ? AppTheme.accent : AppTheme.textFaint,
-                foregroundColor:
-                    availableForSale > 0
-                        ? AppTheme.textMain
-                        : AppTheme.textSecondary,
-                icon: Icon(Icons.add),
-                label: Text(availableForSale > 0 ? 'بيع جديد' : 'لا يوجد متاح'),
-              );
-            },
-          );
+  Widget _buildSearchBar() {
+    return Container(
+      margin: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.textFaint.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: EnhancedSearchField(
+        controller: _searchController,
+        hintText: 'البحث عن مشتري...',
+        
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        onClear: () {
+          setState(() {
+            _searchQuery = '';
+          });
         },
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return EnhancedSearchField(
-      controller: _searchController,
-      hintText: 'البحث عن مشتري...',
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value;
-        });
-      },
-      onClear: () {
-        setState(() {
-          _searchQuery = '';
-        });
-      },
+  // ...existing code... (keep all other methods unchanged)
+  Widget _buildLoadingState() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppTheme.scaffoldLight,
+            AppTheme.scaffoldLight.withOpacity(0.8),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: AppTheme.cardLight,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: CircularProgressIndicator(
+                color: AppTheme.primary,
+                strokeWidth: 2.5.w,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'جاري التحميل...',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
-    if (_searchQuery.isNotEmpty) {
-      // حالة عدم وجود نتائج للبحث
-      return SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: 16.w,
-          vertical: 40.h,
-        ), // تقليل المساحة لأن ملخص البيع مخفي
-        child: Center(
+  Widget _buildSummaryCard(
+    int totalSoldCount,
+    double totalSalesAmount,
+    int totalDeaths,
+    int availableForSale,
+  ) {
+    final salesPercentage = (totalSoldCount / widget.batch.chickCount) * 100;
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.cardLight, AppTheme.cardLight.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.textFaint.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(14.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.accent,
+                        AppTheme.accent.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.accent.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.analytics, color: Colors.white, size: 20.w),
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  'ملخص المبيعات',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppTheme.textMain,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 14.h),
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.accent.withOpacity(0.1),
+                    AppTheme.accent.withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppTheme.accent.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.monetization_on,
+                    color: AppTheme.accent,
+                    size: 24.w,
+                  ),
+                  SizedBox(width: 10.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'إجمالي المبيعات',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        '${totalSalesAmount.toStringAsFixed(2)} جنيه',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'المباع',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppTheme.textSecondary),
+                        ),
+                        Text(
+                          '$totalSoldCount',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.success,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildModernInfoItem(
+                    'المتاح للبيع',
+                    '$availableForSale',
+                    'كتكوت',
+                    availableForSale > 0 ? AppTheme.primary : AppTheme.error,
+                    Icons.sell,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _buildModernInfoItem(
+                    'الوفيات',
+                    '$totalDeaths',
+                    'كتكوت',
+                    AppTheme.error,
+                    Icons.dangerous,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildModernInfoItem(
+                    'نسبة البيع',
+                    salesPercentage.toStringAsFixed(1),
+                    '%',
+                    AppTheme.info,
+                    Icons.trending_up,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _buildModernInfoItem(
+                    'المتبقي',
+                    '${widget.batch.chickCount - totalSoldCount - totalDeaths}',
+                    'كتكوت',
+                    AppTheme.success,
+                    Icons.inventory,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ...existing methods remain the same...
+  Widget _buildModernInfoItem(
+    String label,
+    String value,
+    String unit,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(8.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+        ),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 16.w),
+          SizedBox(height: 4.h),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppTheme.textSecondary,
+              fontSize: 10.sp,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 2.h),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(
+                  text: ' $unit',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppTheme.scaffoldLight, AppTheme.error.withOpacity(0.05)],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 padding: EdgeInsets.all(24.w),
                 decoration: BoxDecoration(
-                  color: AppTheme.info.withOpacity(0.1),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.error.withOpacity(0.1),
+                      AppTheme.error.withOpacity(0.05),
+                    ],
+                  ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.error.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.search_off, size: 64.w, color: AppTheme.info),
+                child: Icon(
+                  Icons.error_outline,
+                  size: 48.w,
+                  color: AppTheme.error,
+                ),
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 16.h),
+              Text(
+                'حدث خطأ',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppTheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                message,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20.h),
+              ElevatedButton.icon(
+                onPressed: () {
+                  context.read<SalesCubit>().loadSales(widget.batch.id);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: AppTheme.textLight,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 12.h,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  elevation: 4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    if (_searchQuery.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(10.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.info.withOpacity(0.1),
+                      AppTheme.info.withOpacity(0.05),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.info.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.search_off, size: 48.w, color: AppTheme.info),
+              ),
+              SizedBox(height: 16.h),
               Text(
                 'لا توجد نتائج',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: AppTheme.textMain,
                   fontWeight: FontWeight.bold,
                 ),
@@ -431,8 +690,11 @@ class _SalesScreenState extends State<SalesScreen> {
                   backgroundColor: AppTheme.info,
                   foregroundColor: AppTheme.textLight,
                   padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: 12.h,
+                    horizontal: 20.w,
+                    vertical: 10.h,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
                 ),
               ),
@@ -441,32 +703,36 @@ class _SalesScreenState extends State<SalesScreen> {
         ),
       );
     } else {
-      // حالة عدم وجود مبيعات
-      return SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 80.h),
-        child: Center(
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 padding: EdgeInsets.all(24.w),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardLight,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.accent.withOpacity(0.1),
+                      AppTheme.accent.withOpacity(0.05),
+                    ],
+                  ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.textFaint.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: AppTheme.accent.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
-                child: Icon(Icons.sell, size: 64.w, color: AppTheme.textFaint),
+                child: Icon(Icons.sell, size: 48.w, color: AppTheme.accent),
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 16.h),
               Text(
                 'لا توجد مبيعات مسجلة',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: AppTheme.textMain,
                   fontWeight: FontWeight.bold,
                 ),
@@ -486,172 +752,115 @@ class _SalesScreenState extends State<SalesScreen> {
     }
   }
 
-  Widget _buildSummaryCard(
-    int totalSoldCount,
-    double totalSalesAmount,
-    int totalDeaths,
-    int availableForSale,
-  ) {
-    final salesPercentage = (totalSoldCount / widget.batch.chickCount) * 100;
+  Widget _buildFloatingActionButton() {
+    return BlocBuilder<SalesCubit, SalesState>(
+      builder: (context, salesState) {
+        return BlocBuilder<DeathsCubit, DeathsState>(
+          builder: (context, deathsState) {
+            int totalSold = 0;
+            int totalDeaths = 0;
 
-    return Card(
-      margin: EdgeInsets.all(6.r),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      child: Padding(
-        padding: EdgeInsets.all(12.r),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(6.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6.r),
+            if (salesState is SalesLoaded) {
+              totalSold = salesState.totalSoldCount;
+            }
+
+            if (deathsState is DeathsLoaded) {
+              totalDeaths = deathsState.totalDeathsCount;
+            }
+
+            final availableForSale = _calculateAvailableForSale(
+              totalSold,
+              totalDeaths,
+            );
+
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: (availableForSale > 0
+                            ? AppTheme.accent
+                            : AppTheme.textFaint)
+                        .withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Icon(Icons.sell, color: AppTheme.accent, size: 16.w),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed:
+                    availableForSale > 0
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      AddSaleScreen(batch: widget.batch),
+                            ),
+                          );
+                        }
+                        : null,
+                backgroundColor:
+                    availableForSale > 0 ? AppTheme.accent : AppTheme.textFaint,
+                foregroundColor:
+                    availableForSale > 0
+                        ? Colors.white
+                        : AppTheme.textSecondary,
+                icon: Icon(availableForSale > 0 ? Icons.add : Icons.block),
+                label: Text(
+                  availableForSale > 0 ? 'بيع جديد' : 'لا يوجد متاح',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(width: 8.w),
-                Text(
-                  'ملخص المبيعات',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textMain,
-                    fontWeight: FontWeight.bold,
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25.r),
                 ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'إجمالي المبيعات',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        '${totalSalesAmount.toStringAsFixed(2)} جنيه',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppTheme.accent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(
-                      color: AppTheme.success.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'المباع',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                          fontSize: 10.sp,
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        '$totalSoldCount كتكوت',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.success,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoItem(
-                    'المتاح للبيع',
-                    '$availableForSale كتكوت',
-                    availableForSale > 0 ? AppTheme.primary : AppTheme.error,
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Expanded(
-                  child: _buildInfoItem(
-                    'الوفيات',
-                    '$totalDeaths كتكوت',
-                    AppTheme.error,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 6.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoItem(
-                    'نسبة البيع',
-                    '${salesPercentage.toStringAsFixed(1)}%',
-                    AppTheme.info,
-                  ),
-                ),
-                SizedBox(width: 6.w),
-                Expanded(
-                  child: _buildInfoItem(
-                    'المتبقي',
-                    '${widget.batch.chickCount - totalSoldCount - totalDeaths} كتكوت',
-                    AppTheme.success,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildInfoItem(String label, String value, Color color) {
-    return Container(
-      padding: EdgeInsets.all(6.r),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6.r),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppTheme.textSecondary,
-              fontSize: 10.sp,
+  void _showDeleteConfirmation(BuildContext context, SaleEntity sale) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
             ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
+            title: Row(
+              children: [
+                Icon(Icons.warning, color: AppTheme.error),
+                SizedBox(width: 8.w),
+                Text('تأكيد الحذف'),
+              ],
             ),
+            content: Text(
+              'هل تريد حذف عملية البيع للمشتري "${sale.buyerName}"؟',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<SalesCubit>().deleteSale(
+                    sale.id,
+                    widget.batch.id,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error,
+                ),
+                child: Text('حذف', style: TextStyle(color: Colors.white)),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -660,209 +869,329 @@ class SaleCard extends StatelessWidget {
   final SaleEntity sale;
   final VoidCallback onDelete;
   final BatchEntity batch;
+  final int index;
+  final bool isCompact; // New parameter for compact mode
 
   const SaleCard({
     super.key,
     required this.sale,
     required this.onDelete,
     required this.batch,
+    required this.index,
+    this.isCompact = false, // Default to false
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 8.h),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+    return Container(
+      margin: EdgeInsets.only(
+        bottom: isCompact ? 6.h : 8.h,
+      ), // Reduced margin when compact
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.cardLight, AppTheme.cardLight.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.textFaint.withOpacity(0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: EdgeInsets.all(12.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Icon(Icons.person, color: AppTheme.accent, size: 20.w),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        sale.buyerName,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textMain,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14.w,
-                            color: AppTheme.textSecondary,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            _formatDate(sale.date),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: AppTheme.textSecondary),
-                          ),
+        padding: EdgeInsets.all(
+          isCompact ? 8.w : 10.w,
+        ), // Reduced padding when compact
+        child: IntrinsicHeight(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row - معلومات المشتري والسعر الإجمالي
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(
+                      isCompact ? 4.w : 6.w,
+                    ), // Smaller padding when compact
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.accent,
+                          AppTheme.accent.withOpacity(0.8),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${sale.totalPrice.toStringAsFixed(2)} جنيه',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.accent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '${sale.chickCount} كتكوت',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDetailItem(
-                    'سعر الكتكوت',
-                    '${sale.pricePerChick.toStringAsFixed(2)} جنيه',
-                    AppTheme.primary,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: _buildDetailItem(
-                    'المدفوع',
-                    '${sale.paidAmount.toStringAsFixed(2)} جنيه',
-                    AppTheme.success,
-                  ),
-                ),
-              ],
-            ),
-            if (sale.remainingAmount > 0) ...[
-              SizedBox(height: 8.h),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(
-                    color: AppTheme.warning.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.pending, color: AppTheme.warning, size: 16.w),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'الباقي: ${sale.remainingAmount.toStringAsFixed(2)} جنيه',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.warning,
-                          fontWeight: FontWeight.w600,
+                      borderRadius: BorderRadius.circular(8.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.accent.withOpacity(0.2),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
                         ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size:
+                          isCompact ? 12.w : 14.w, // Smaller icon when compact
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          sale.buyerName,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(
+                            color: AppTheme.textMain,
+                            fontWeight: FontWeight.bold,
+                            fontSize:
+                                isCompact
+                                    ? 12.sp
+                                    : 14.sp, // Smaller font when compact
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 1.h),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size:
+                                  isCompact
+                                      ? 8.w
+                                      : 10.w, // Smaller icon when compact
+                              color: AppTheme.textSecondary,
+                            ),
+                            SizedBox(width: 3.w),
+                            Text(
+                              _formatDate(sale.date),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                color: AppTheme.textSecondary,
+                                fontSize:
+                                    isCompact
+                                        ? 8.sp
+                                        : 10.sp, // Smaller font when compact
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal:
+                          isCompact ? 4.w : 6.w, // Smaller padding when compact
+                      vertical: isCompact ? 3.h : 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.success.withOpacity(0.12),
+                          AppTheme.success.withOpacity(0.08),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(6.r),
+                      border: Border.all(
+                        color: AppTheme.success.withOpacity(0.25),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${sale.totalPrice.toStringAsFixed(0)} ج',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelMedium?.copyWith(
+                            color: AppTheme.success,
+                            fontWeight: FontWeight.bold,
+                            fontSize:
+                                isCompact
+                                    ? 10.sp
+                                    : 12.sp, // Smaller font when compact
+                          ),
+                        ),
+                        Text(
+                          '${sale.chickCount} كتكوت',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontSize:
+                                isCompact
+                                    ? 7.sp
+                                    : 9.sp, // Smaller font when compact
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: isCompact ? 4.h : 6.h,
+              ), // Reduced spacing when compact
+              // Details and actions in a flexible layout
+              Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Row مدمج للتفاصيل والمبلغ المتبقي
+                    Row(
+                      children: [
+                        // سعر الكتكوت
+                        Expanded(
+                          flex: 3,
+                          child: _buildMiniDetailItem(
+                            'سعر الكتكوت',
+                            '${sale.pricePerChick.toStringAsFixed(1)} ج',
+                            AppTheme.primary,
+                            Icons.monetization_on,
+                            isCompact,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        // المدفوع
+                        Expanded(
+                          flex: 3,
+                          child: _buildMiniDetailItem(
+                            'المدفوع',
+                            '${sale.paidAmount.toStringAsFixed(0)} ج',
+                            AppTheme.info,
+                            Icons.payment,
+                            isCompact,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        // المبلغ المتبقي إذا كان موجوداً
+                        if (sale.remainingAmount > 0)
+                          Expanded(
+                            flex: 4,
+                            child: _buildMiniDetailItem(
+                              'المتبقي',
+                              '${sale.remainingAmount.toStringAsFixed(0)} ج',
+                              AppTheme.warning,
+                              Icons.pending_actions,
+                              isCompact,
+                            ),
+                          )
+                        else
+                          Expanded(flex: 4, child: SizedBox()),
+                      ],
+                    ),
+
+                    // الأزرار في صف منفصل دائماً لتجنب المساحة المحدودة
+                    SizedBox(
+                      height: isCompact ? 3.h : 4.h,
+                    ), // Reduced spacing when compact
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildMiniActionButton(
+                          icon: Icons.edit,
+                          color: AppTheme.info,
+                          isCompact: isCompact,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => EditSaleScreen(
+                                      sale: sale,
+                                      batch: batch,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(width: 4.w),
+                        _buildMiniActionButton(
+                          icon: Icons.delete_outline,
+                          color: AppTheme.error,
+                          isCompact: isCompact,
+                          onPressed: onDelete,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ],
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // زر تعديل عملية البيع
-                IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                EditSaleScreen(sale: sale, batch: batch),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.edit, color: AppTheme.info, size: 20.w),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppTheme.info.withOpacity(0.1),
-                    padding: EdgeInsets.all(8.w),
-                  ),
-                  tooltip: 'تعديل عملية البيع',
-                ),
-                SizedBox(width: 8.w),
-                // زر حذف عملية البيع
-                IconButton(
-                  onPressed: onDelete,
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: AppTheme.error,
-                    size: 20.w,
-                  ),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppTheme.error.withOpacity(0.1),
-                    padding: EdgeInsets.all(8.w),
-                  ),
-                  tooltip: 'حذف عملية البيع',
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailItem(String label, String value, Color color) {
+  Widget _buildMiniDetailItem(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+    bool isCompact,
+  ) {
     return Builder(
       builder:
           (context) => Container(
-            padding: EdgeInsets.all(8.w),
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 3.w : 4.w, // Smaller padding when compact
+              vertical: isCompact ? 3.h : 4.h,
+            ),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6.r),
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.08), color.withOpacity(0.04)],
+              ),
+              borderRadius: BorderRadius.circular(4.r),
+              border: Border.all(color: color.withOpacity(0.2), width: 0.5),
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(
+                  icon,
+                  color: color,
+                  size: isCompact ? 8.w : 10.w, // Smaller icon when compact
+                ),
+                SizedBox(height: 1.h),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: AppTheme.textSecondary,
+                    fontSize:
+                        isCompact ? 6.sp : 7.sp, // Smaller font when compact
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 2.h),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: color,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
+                    fontSize:
+                        isCompact ? 7.sp : 8.sp, // Smaller font when compact
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -870,7 +1199,45 @@ class SaleCard extends StatelessWidget {
     );
   }
 
+  Widget _buildMiniActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    required bool isCompact,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4.r),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.15),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(4.r),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(4.r),
+          child: Container(
+            padding: EdgeInsets.all(
+              isCompact ? 3.w : 4.w,
+            ), // Smaller padding when compact
+            child: Icon(
+              icon,
+              color: color,
+              size: isCompact ? 12.w : 14.w, // Smaller icon when compact
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.day}/${date.month}';
   }
 }

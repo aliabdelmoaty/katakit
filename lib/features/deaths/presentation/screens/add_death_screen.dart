@@ -484,6 +484,13 @@ class _AddDeathScreenState extends State<AddDeathScreen>
             icon: Icons.remove_circle_outline,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
+            onSubmitted: () {
+              if (_formKey.currentState!.validate() &&
+                  availableForDeaths > 0 &&
+                  _countController.text.isNotEmpty) {
+                _submitForm();
+              }
+            },
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
