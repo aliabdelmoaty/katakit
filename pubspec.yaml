@@ -28,6 +28,8 @@ dependencies:
   # Dependency Injection
   get_it: ^7.6.4
   cupertino_icons: ^1.0.8
+  # Native Splash Screen
+  flutter_native_splash: ^2.4.0
 
 dev_dependencies:
   flutter_test:
