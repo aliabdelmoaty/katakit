@@ -5,6 +5,7 @@ import '../../../../core/entities/addition_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../cubit/additions_cubit.dart';
+import '../../../deaths/cubit/deaths_cubit.dart';
 import 'add_addition_screen.dart';
 import '../../../../core/services/sync_service.dart';
 
@@ -40,6 +41,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     );
 
     context.read<AdditionsCubit>().loadAdditions(widget.batch.id);
+    context.read<DeathsCubit>().loadDeaths(widget.batch.id);
     _fabAnimationController.forward();
 
     SyncService().userNoticeStream.listen((msg) {
@@ -87,7 +89,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
@@ -95,24 +97,37 @@ class _AdditionsScreenState extends State<AdditionsScreen>
           _buildSliverAppBar(),
           SliverToBoxAdapter(child: SizedBox(height: 8.h)),
           BlocBuilder<AdditionsCubit, AdditionsState>(
-            builder: (context, state) {
-              if (state is AdditionsLoading) {
+            builder: (context, additionsState) {
+              if (additionsState is AdditionsLoading) {
                 return SliverFillRemaining(child: _buildLoadingState());
-              } else if (state is AdditionsLoaded) {
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildEnhancedSummaryCard(state.totalCost),
-                    SizedBox(height: 8.h),
-                    if (state.additions.isEmpty)
-                      _buildEmptyState()
-                    else
-                      _buildAdditionsList(state.additions),
-                    SizedBox(height: 100.h), // Space for FAB
-                  ]),
+              } else if (additionsState is AdditionsLoaded) {
+                // استخدام BlocBuilder للحصول على بيانات الوفيات
+                return BlocBuilder<DeathsCubit, DeathsState>(
+                  builder: (context, deathsState) {
+                    int totalDeaths = 0;
+                    if (deathsState is DeathsLoaded) {
+                      totalDeaths = deathsState.totalDeathsCount;
+                    }
+
+                    return SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildEnhancedSummaryCard(
+                          additionsState.totalCost,
+                          totalDeaths,
+                        ),
+                        SizedBox(height: 8.h),
+                        if (additionsState.additions.isEmpty)
+                          _buildEmptyState()
+                        else
+                          _buildAdditionsList(additionsState.additions),
+                        SizedBox(height: 100.h), // Space for FAB
+                      ]),
+                    );
+                  },
                 );
-              } else if (state is AdditionsError) {
+              } else if (additionsState is AdditionsError) {
                 return SliverFillRemaining(
-                  child: _buildErrorState(state.message),
+                  child: _buildErrorState(additionsState.message),
                 );
               }
               return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -162,7 +177,6 @@ class _AdditionsScreenState extends State<AdditionsScreen>
       ),
     );
   }
-
   Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 180.h,
@@ -360,8 +374,11 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     );
   }
 
-  Widget _buildEnhancedSummaryCard(double totalCost) {
-    final actualCostPerChick = _calculateActualCostPerChick(totalCost);
+ Widget _buildEnhancedSummaryCard(double totalCost, int totalDeaths) {
+    final actualCostPerChick = _calculateActualCostPerChickWithDeaths(
+      totalCost,
+      totalDeaths,
+    );
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -419,6 +436,45 @@ class _AdditionsScreenState extends State<AdditionsScreen>
               ],
             ),
             SizedBox(height: 20.h),
+            // إضافة معلومات عن عدد الكتاكيت
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: AppTheme.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppTheme.info.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppTheme.info, size: 20.w),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'عدد الكتاكيت المتبقية (بعد الوفيات)',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${widget.batch.chickCount - totalDeaths} من أصل ${widget.batch.chickCount}',
+                          style: TextStyle(
+                            color: AppTheme.info,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16.h),
             Row(
               children: [
                 Expanded(
@@ -432,7 +488,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
                 SizedBox(width: 12.w),
                 Expanded(
                   child: _buildSummaryItem(
-                    'التكلفة الحقيقية',
+                    'التكلفة الحقيقية للكتكوت',
                     '${actualCostPerChick.toStringAsFixed(2)} جنيه',
                     Icons.trending_up_rounded,
                     AppTheme.accent,
@@ -445,7 +501,6 @@ class _AdditionsScreenState extends State<AdditionsScreen>
       ),
     );
   }
-
   Widget _buildSummaryItem(
     String title,
     String value,
@@ -739,9 +794,14 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     );
   }
 
-  double _calculateActualCostPerChick(double totalAdditionsCost) {
+     double _calculateActualCostPerChickWithDeaths(
+    double totalAdditionsCost,
+    int totalDeaths,
+  ) {
     final totalCost = widget.batch.totalBuyPrice + totalAdditionsCost;
-    final remainingChicks = widget.batch.chickCount;
+    final remainingChicks = widget.batch.chickCount - totalDeaths;
+
+    // التأكد من أن عدد الكتاكيت المتبقية أكبر من صفر
     return remainingChicks > 0 ? totalCost / remainingChicks : 0.0;
   }
 }
