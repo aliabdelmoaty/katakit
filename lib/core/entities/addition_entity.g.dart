@@ -22,13 +22,15 @@ class AdditionEntityAdapter extends TypeAdapter<AdditionEntity> {
       name: fields[2] as String,
       cost: fields[3] as double,
       date: fields[4] as DateTime,
+      userId: fields[5] as String,
+      updatedAt: fields[6] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, AdditionEntity obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +40,11 @@ class AdditionEntityAdapter extends TypeAdapter<AdditionEntity> {
       ..writeByte(3)
       ..write(obj.cost)
       ..writeByte(4)
-      ..write(obj.date);
+      ..write(obj.date)
+      ..writeByte(5)
+      ..write(obj.userId)
+      ..writeByte(6)
+      ..write(obj.updatedAt);
   }
 
   @override

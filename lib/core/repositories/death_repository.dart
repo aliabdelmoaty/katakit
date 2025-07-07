@@ -1,5 +1,9 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../entities/death_entity.dart';
+import '../services/sync_service.dart';
+import '../services/sync_queue.dart';
+import '../services/connection_service.dart';
+import 'dart:developer' as dev;
 
 abstract class IDeathRepository {
   Future<List<DeathEntity>> getDeathsByBatchId(String batchId);
@@ -12,6 +16,8 @@ abstract class IDeathRepository {
 class DeathRepository implements IDeathRepository {
   static const String _boxName = 'deaths';
 
+  Future<bool> _isOnline() async => await ConnectionService().isConnected;
+
   @override
   Future<List<DeathEntity>> getDeathsByBatchId(String batchId) async {
     final box = await Hive.openBox<DeathEntity>(_boxName);
@@ -22,6 +28,17 @@ class DeathRepository implements IDeathRepository {
   Future<void> addDeath(DeathEntity death) async {
     final box = await Hive.openBox<DeathEntity>(_boxName);
     await box.add(death);
+    if (!await _isOnline()) {
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: death.id,
+          type: 'add',
+          entityType: 'death',
+          data: deathToMap(death),
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
   }
 
   @override
@@ -30,6 +47,17 @@ class DeathRepository implements IDeathRepository {
     final index = box.values.toList().indexWhere((d) => d.id == death.id);
     if (index != -1) {
       await box.putAt(index, death);
+      if (!await _isOnline()) {
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: death.id,
+            type: 'edit',
+            entityType: 'death',
+            data: deathToMap(death),
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
     }
   }
 
@@ -38,7 +66,19 @@ class DeathRepository implements IDeathRepository {
     final box = await Hive.openBox<DeathEntity>(_boxName);
     final index = box.values.toList().indexWhere((d) => d.id == id);
     if (index != -1) {
+      final death = box.getAt(index);
       await box.deleteAt(index);
+      if (death != null && !await _isOnline()) {
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: death.id,
+            type: 'delete',
+            entityType: 'death',
+            data: {'id': death.id},
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
     }
   }
 
@@ -47,4 +87,13 @@ class DeathRepository implements IDeathRepository {
     final deaths = await getDeathsByBatchId(batchId);
     return deaths.fold<int>(0, (sum, death) => sum + death.count);
   }
+
+  Map<String, dynamic> deathToMap(DeathEntity d) => {
+    'id': d.id,
+    'batchId': d.batchId,
+    'count': d.count,
+    'date': d.date.toIso8601String(),
+    'userId': d.userId,
+    'updatedAt': d.updatedAt.toIso8601String(),
+  };
 }

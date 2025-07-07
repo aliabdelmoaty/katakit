@@ -1,5 +1,9 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../entities/batch_entity.dart';
+import '../services/sync_service.dart';
+import '../services/sync_queue.dart';
+import '../services/connection_service.dart';
+import 'dart:developer' as dev;
 
 abstract class IBatchRepository {
   Future<List<BatchEntity>> getAllBatches();
@@ -11,6 +15,8 @@ abstract class IBatchRepository {
 
 class BatchRepository implements IBatchRepository {
   static const String _boxName = 'batches';
+
+  Future<bool> _isOnline() async => await ConnectionService().isConnected;
 
   @override
   Future<List<BatchEntity>> getAllBatches() async {
@@ -28,6 +34,17 @@ class BatchRepository implements IBatchRepository {
   Future<void> addBatch(BatchEntity batch) async {
     final box = await Hive.openBox<BatchEntity>(_boxName);
     await box.add(batch);
+    if (!await _isOnline()) {
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: batch.id,
+          type: 'add',
+          entityType: 'batch',
+          data: batchToMap(batch),
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
   }
 
   @override
@@ -36,6 +53,17 @@ class BatchRepository implements IBatchRepository {
     final index = box.values.toList().indexWhere((b) => b.id == batch.id);
     if (index != -1) {
       await box.putAt(index, batch);
+      if (!await _isOnline()) {
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: batch.id,
+            type: 'edit',
+            entityType: 'batch',
+            data: batchToMap(batch),
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
     }
   }
 
@@ -44,7 +72,31 @@ class BatchRepository implements IBatchRepository {
     final box = await Hive.openBox<BatchEntity>(_boxName);
     final index = box.values.toList().indexWhere((b) => b.id == id);
     if (index != -1) {
+      final batch = box.getAt(index);
       await box.deleteAt(index);
+      if (batch != null && !await _isOnline()) {
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: batch.id,
+            type: 'delete',
+            entityType: 'batch',
+            data: {'id': batch.id},
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
     }
   }
+
+  Map<String, dynamic> batchToMap(BatchEntity b) => {
+    'id': b.id,
+    'name': b.name,
+    'date': b.date.toIso8601String(),
+    'supplier': b.supplier,
+    'chickCount': b.chickCount,
+    'chickBuyPrice': b.chickBuyPrice,
+    'note': b.note,
+    'userId': b.userId,
+    'updatedAt': b.updatedAt.toIso8601String(),
+  };
 }

@@ -5,7 +5,7 @@ import 'package:katakit/main.dart';
 void main() {
   testWidgets('App loads without crashing', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(syncStatusStream: Stream.empty()));
 
     // Verify that the app title is displayed
     expect(find.text('🐣 كتاكيت عبد المعطي'), findsOneWidget);

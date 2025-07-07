@@ -19,12 +19,20 @@ class AdditionEntity extends HiveObject {
   @HiveField(4)
   final DateTime date;
 
+  @HiveField(5)
+  final String userId;
+
+  @HiveField(6)
+  final DateTime updatedAt;
+
   AdditionEntity({
     required this.id,
     required this.batchId,
     required this.name,
     required this.cost,
     required this.date,
+    required this.userId,
+    required this.updatedAt,
   });
 
   AdditionEntity copyWith({
@@ -33,6 +41,8 @@ class AdditionEntity extends HiveObject {
     String? name,
     double? cost,
     DateTime? date,
+    String? userId,
+    DateTime? updatedAt,
   }) {
     return AdditionEntity(
       id: id ?? this.id,
@@ -40,6 +50,8 @@ class AdditionEntity extends HiveObject {
       name: name ?? this.name,
       cost: cost ?? this.cost,
       date: date ?? this.date,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? DateTime.now(),
     );
   }
-} 
+}

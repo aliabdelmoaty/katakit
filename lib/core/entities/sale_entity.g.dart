@@ -25,13 +25,15 @@ class SaleEntityAdapter extends TypeAdapter<SaleEntity> {
       pricePerChick: fields[5] as double,
       paidAmount: fields[6] as double,
       note: fields[7] as String?,
+      userId: fields[8] as String,
+      updatedAt: fields[9] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, SaleEntity obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +49,11 @@ class SaleEntityAdapter extends TypeAdapter<SaleEntity> {
       ..writeByte(6)
       ..write(obj.paidAmount)
       ..writeByte(7)
-      ..write(obj.note);
+      ..write(obj.note)
+      ..writeByte(8)
+      ..write(obj.userId)
+      ..writeByte(9)
+      ..write(obj.updatedAt);
   }
 
   @override

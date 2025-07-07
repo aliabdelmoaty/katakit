@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/deaths_cubit.dart';
 import '../../../sales/cubit/sales_cubit.dart';
+import '../../../auth/cubit/auth_cubit.dart';
 
 class AddDeathScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -69,13 +70,19 @@ class _AddDeathScreenState extends State<AddDeathScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthCubit>().state;
+      String userId = '';
+      if (authState is Authenticated) {
+        userId = authState.userId;
+      }
       final death = DeathEntity(
         id: const Uuid().v4(),
         batchId: widget.batch.id,
         count: int.parse(_countController.text),
         date: _selectedDate,
+        userId: userId,
+        updatedAt: DateTime.now(),
       );
-
       context.read<DeathsCubit>().addDeath(death);
       Navigator.pop(context);
     }

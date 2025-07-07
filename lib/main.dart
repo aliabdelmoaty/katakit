@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hive/hive.dart';
 import 'core/di/service_locator.dart';
 import 'core/theme/app_theme.dart';
 import 'features/batches/presentation/screens/batches_screen.dart';
@@ -10,11 +11,12 @@ import 'features/additions/cubit/additions_cubit.dart';
 import 'features/deaths/cubit/deaths_cubit.dart';
 import 'features/sales/cubit/sales_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'features/auth/cubit/auth_cubit.dart';
+import 'features/auth/cubit/auth_cubit.dart' as auth;
 import 'features/auth/repository/auth_repository.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'dart:developer' as dev;
 import 'core/services/connection_service.dart';
+import 'core/services/sync_service.dart';
 
 const supabaseUrl = 'https://qqrgsjguqhbshrypjsti.supabase.co';
 const supabaseAnonKey =
@@ -29,11 +31,13 @@ void main() async {
     'Internet connection: ${connected ? 'Online' : 'Offline'}',
     name: 'connection',
   );
-  runApp(const MyApp());
+  SyncService().startSync();
+  runApp(MyApp(syncStatusStream: SyncService().syncStatusStream));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Stream<SyncStatus> syncStatusStream;
+  const MyApp({super.key, required this.syncStatusStream});
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +47,8 @@ class MyApp extends StatelessWidget {
         BlocProvider<AdditionsCubit>(create: (context) => sl<AdditionsCubit>()),
         BlocProvider<DeathsCubit>(create: (context) => sl<DeathsCubit>()),
         BlocProvider<SalesCubit>(create: (context) => sl<SalesCubit>()),
-        BlocProvider<AuthCubit>(
-          create: (_) => AuthCubit(authRepository: AuthRepository()),
+        BlocProvider<auth.AuthCubit>(
+          create: (_) => auth.AuthCubit(authRepository: AuthRepository()),
         ),
       ],
       child: ScreenUtilInit(
@@ -70,7 +74,15 @@ class MyApp extends StatelessWidget {
                 child: child!,
               );
             },
-            home: const LoginScreen(),
+            home: BlocBuilder<auth.AuthCubit, auth.AuthState>(
+              builder: (context, state) {
+                if (state is auth.Authenticated) {
+                  return BatchesScreen(syncStatusStream: syncStatusStream);
+                } else {
+                  return const LoginScreen();
+                }
+              },
+            ),
           );
         },
       ),

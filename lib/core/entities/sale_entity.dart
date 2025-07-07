@@ -28,6 +28,12 @@ class SaleEntity extends HiveObject {
   @HiveField(7)
   final String? note;
 
+  @HiveField(8)
+  final String userId;
+
+  @HiveField(9)
+  final DateTime updatedAt;
+
   SaleEntity({
     required this.id,
     required this.batchId,
@@ -37,6 +43,8 @@ class SaleEntity extends HiveObject {
     required this.pricePerChick,
     required this.paidAmount,
     this.note,
+    required this.userId,
+    required this.updatedAt,
   });
 
   // الحسابات التلقائية
@@ -52,6 +60,8 @@ class SaleEntity extends HiveObject {
     double? pricePerChick,
     double? paidAmount,
     String? note,
+    String? userId,
+    DateTime? updatedAt,
   }) {
     return SaleEntity(
       id: id ?? this.id,
@@ -62,6 +72,8 @@ class SaleEntity extends HiveObject {
       pricePerChick: pricePerChick ?? this.pricePerChick,
       paidAmount: paidAmount ?? this.paidAmount,
       note: note ?? this.note,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 }

@@ -16,6 +16,7 @@ import '../../features/batches/cubit/batches_cubit.dart';
 import '../../features/additions/cubit/additions_cubit.dart';
 import '../../features/deaths/cubit/deaths_cubit.dart';
 import '../../features/sales/cubit/sales_cubit.dart';
+import '../services/sync_queue.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -28,6 +29,7 @@ Future<void> init() async {
   Hive.registerAdapter(AdditionEntityAdapter());
   Hive.registerAdapter(DeathEntityAdapter());
   Hive.registerAdapter(SaleEntityAdapter());
+  Hive.registerAdapter(SyncQueueItemAdapter());
 
   // Repositories
   sl.registerLazySingleton<IBatchRepository>(() => BatchRepository());

@@ -21,13 +21,15 @@ class DeathEntityAdapter extends TypeAdapter<DeathEntity> {
       batchId: fields[1] as String,
       count: fields[2] as int,
       date: fields[3] as DateTime,
+      userId: fields[4] as String,
+      updatedAt: fields[5] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, DeathEntity obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +37,11 @@ class DeathEntityAdapter extends TypeAdapter<DeathEntity> {
       ..writeByte(2)
       ..write(obj.count)
       ..writeByte(3)
-      ..write(obj.date);
+      ..write(obj.date)
+      ..writeByte(4)
+      ..write(obj.userId)
+      ..writeByte(5)
+      ..write(obj.updatedAt);
   }
 
   @override

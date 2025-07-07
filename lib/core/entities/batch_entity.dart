@@ -25,6 +25,12 @@ class BatchEntity extends HiveObject {
   @HiveField(7)
   final String? note;
 
+  @HiveField(8)
+  final String userId;
+
+  @HiveField(9)
+  final DateTime updatedAt;
+
   BatchEntity({
     required this.id,
     required this.name,
@@ -33,6 +39,8 @@ class BatchEntity extends HiveObject {
     required this.chickCount,
     required this.chickBuyPrice,
     this.note,
+    required this.userId,
+    required this.updatedAt,
   });
 
   // الحسابات التلقائية
@@ -48,6 +56,8 @@ class BatchEntity extends HiveObject {
     int? chickCount,
     double? chickBuyPrice,
     String? note,
+    String? userId,
+    DateTime? updatedAt,
   }) {
     return BatchEntity(
       id: id ?? this.id,
@@ -57,6 +67,8 @@ class BatchEntity extends HiveObject {
       chickCount: chickCount ?? this.chickCount,
       chickBuyPrice: chickBuyPrice ?? this.chickBuyPrice,
       note: note ?? this.note,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 }

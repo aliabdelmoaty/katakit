@@ -7,6 +7,7 @@ import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/batches_cubit.dart';
+import '../../../auth/cubit/auth_cubit.dart';
 
 class AddBatchScreen extends StatefulWidget {
   const AddBatchScreen({super.key});
@@ -60,6 +61,11 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthCubit>().state;
+      String userId = '';
+      if (authState is Authenticated) {
+        userId = authState.userId;
+      }
       final batch = BatchEntity(
         id: const Uuid().v4(),
         name: _nameController.text.trim(),
@@ -71,6 +77,8 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
             _noteController.text.trim().isEmpty
                 ? null
                 : _noteController.text.trim(),
+        userId: userId,
+        updatedAt: DateTime.now(),
       );
 
       context.read<BatchesCubit>().addBatch(batch);

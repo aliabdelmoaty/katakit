@@ -8,6 +8,7 @@ import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/additions_cubit.dart';
+import '../../../auth/cubit/auth_cubit.dart';
 
 class AddAdditionScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -57,14 +58,20 @@ class _AddAdditionScreenState extends State<AddAdditionScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthCubit>().state;
+      String userId = '';
+      if (authState is Authenticated) {
+        userId = authState.userId;
+      }
       final addition = AdditionEntity(
         id: const Uuid().v4(),
         batchId: widget.batch.id,
         name: _nameController.text.trim(),
         cost: double.parse(_costController.text),
         date: _selectedDate,
+        userId: userId,
+        updatedAt: DateTime.now(),
       );
-
       context.read<AdditionsCubit>().addAddition(addition);
       Navigator.pop(context);
     }

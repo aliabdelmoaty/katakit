@@ -7,9 +7,14 @@ import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/batches_cubit.dart';
 import 'add_batch_screen.dart';
 import 'batch_details_screen.dart';
+import '../../../../core/services/sync_service.dart';
+import '../../../additions/presentation/screens/additions_screen.dart';
+import '../../../deaths/presentation/screens/deaths_screen.dart';
+import '../../../sales/presentation/screens/sales_screen.dart';
 
 class BatchesScreen extends StatefulWidget {
-  const BatchesScreen({super.key});
+  final Stream<SyncStatus>? syncStatusStream;
+  const BatchesScreen({super.key, this.syncStatusStream});
 
   @override
   State<BatchesScreen> createState() => _BatchesScreenState();
@@ -137,6 +142,60 @@ class _BatchesScreenState extends State<BatchesScreen> {
         foregroundColor: AppTheme.textLight,
         elevation: 0,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(32),
+          child:
+              widget.syncStatusStream != null
+                  ? StreamBuilder<SyncStatus>(
+                    stream: widget.syncStatusStream,
+                    builder: (context, snapshot) {
+                      final status = snapshot.data;
+                      if (status == null) return const SizedBox(height: 0);
+                      IconData icon;
+                      String text;
+                      Color color;
+                      switch (status) {
+                        case SyncStatus.synced:
+                          icon = Icons.check_circle;
+                          text = 'تمت المزامنة';
+                          color = AppTheme.success;
+                          break;
+                        case SyncStatus.syncing:
+                          icon = Icons.sync;
+                          text = 'جاري المزامنة...';
+                          color = AppTheme.info;
+                          break;
+                        case SyncStatus.offline:
+                          icon = Icons.wifi_off;
+                          text = 'أوفلاين - في انتظار الاتصال';
+                          color = AppTheme.warning;
+                          break;
+                        case SyncStatus.error:
+                          icon = Icons.error;
+                          text = 'خطأ في المزامنة';
+                          color = AppTheme.error;
+                          break;
+                        default:
+                          icon = Icons.sync;
+                          text = '';
+                          color = AppTheme.info;
+                      }
+                      return Container(
+                        height: 32,
+                        color: color.withOpacity(0.08),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(icon, color: color, size: 18),
+                            const SizedBox(width: 8),
+                            Text(text, style: TextStyle(color: color)),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                  : const SizedBox(height: 0),
+        ),
       ),
       body: Column(
         children: [

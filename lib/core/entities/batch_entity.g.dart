@@ -24,13 +24,15 @@ class BatchEntityAdapter extends TypeAdapter<BatchEntity> {
       chickCount: fields[4] as int,
       chickBuyPrice: fields[5] as double,
       note: fields[7] as String?,
+      userId: fields[8] as String,
+      updatedAt: fields[9] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, BatchEntity obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +46,11 @@ class BatchEntityAdapter extends TypeAdapter<BatchEntity> {
       ..writeByte(5)
       ..write(obj.chickBuyPrice)
       ..writeByte(7)
-      ..write(obj.note);
+      ..write(obj.note)
+      ..writeByte(8)
+      ..write(obj.userId)
+      ..writeByte(9)
+      ..write(obj.updatedAt);
   }
 
   @override

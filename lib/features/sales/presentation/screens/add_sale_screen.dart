@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/sales_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
+import '../../../auth/cubit/auth_cubit.dart';
 
 class AddSaleScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -105,6 +106,11 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthCubit>().state;
+      String userId = '';
+      if (authState is Authenticated) {
+        userId = authState.userId;
+      }
       final sale = SaleEntity(
         id: const Uuid().v4(),
         batchId: widget.batch.id,
@@ -117,6 +123,8 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
             _noteController.text.trim().isEmpty
                 ? null
                 : _noteController.text.trim(),
+        userId: userId,
+        updatedAt: DateTime.now(),
       );
 
       context.read<SalesCubit>().addSale(sale);
