@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive/hive.dart';
 import 'sync_queue.dart';
 import 'connection_service.dart';
-import '../di/service_locator.dart';
 import '../entities/batch_entity.dart';
 import '../entities/addition_entity.dart';
 import '../entities/death_entity.dart';
@@ -79,6 +78,9 @@ class SyncService {
       return;
     }
     _statusController.add(SyncStatus.syncing);
+
+    // Check for empty boxes and download all data from Supabase
+    await _checkAndDownloadInitialData();
     final userId = Supabase.instance.client.auth.currentUser?.id;
     for (final entityType in ['batches', 'additions', 'deaths', 'sales']) {
       try {
@@ -194,6 +196,188 @@ class SyncService {
     _statusController.add(SyncStatus.synced);
     dev.log('Sync complete', name: 'sync');
     _userNoticeController.add('اكتملت المزامنة بنجاح.');
+  }
+
+  Future<void> _checkAndDownloadInitialData() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      dev.log(
+        'User not authenticated, skipping initial data download',
+        name: 'sync',
+      );
+      return;
+    }
+
+    dev.log(
+      'Checking for empty boxes and downloading initial data',
+      name: 'sync',
+    );
+
+    try {
+      // Check and download batches
+      final batchBox = await Hive.openBox<BatchEntity>('batches');
+      if (batchBox.isEmpty) {
+        dev.log(
+          'Batches box is empty, downloading from Supabase',
+          name: 'sync',
+        );
+        _userNoticeController.add('تحميل الدفعات من السحابة...');
+        await _downloadAndSaveData('batches', batchBox, userId);
+      }
+
+      // Check and download additions
+      final additionsBox = await Hive.openBox<AdditionEntity>('additions');
+      if (additionsBox.isEmpty) {
+        dev.log(
+          'Additions box is empty, downloading from Supabase',
+          name: 'sync',
+        );
+        _userNoticeController.add('تحميل المصروفات من السحابة...');
+        await _downloadAndSaveData('additions', additionsBox, userId);
+      }
+
+      // Check and download deaths
+      final deathsBox = await Hive.openBox<DeathEntity>('deaths');
+      if (deathsBox.isEmpty) {
+        dev.log('Deaths box is empty, downloading from Supabase', name: 'sync');
+        _userNoticeController.add('تحميل بيانات الوفيات من السحابة...');
+        await _downloadAndSaveData('deaths', deathsBox, userId);
+      }
+
+      // Check and download sales
+      final salesBox = await Hive.openBox<SaleEntity>('sales');
+      if (salesBox.isEmpty) {
+        dev.log('Sales box is empty, downloading from Supabase', name: 'sync');
+        _userNoticeController.add('تحميل المبيعات من السحابة...');
+        await _downloadAndSaveData('sales', salesBox, userId);
+      }
+    } catch (e, st) {
+      dev.log(
+        'Error downloading initial data: $e',
+        name: 'sync',
+        error: e,
+        stackTrace: st,
+      );
+      _userNoticeController.add('حدث خطأ أثناء تحميل البيانات الأولية: $e');
+    }
+  }
+
+  Future<void> _downloadAndSaveData(
+    String tableName,
+    Box box,
+    String userId,
+  ) async {
+    try {
+      final client = Supabase.instance.client;
+      final response = await client
+          .from(tableName)
+          .select()
+          .eq('userId', userId);
+
+      dev.log(
+        'Downloaded ${response.length} items from $tableName',
+        name: 'sync',
+      );
+
+      if (response.isNotEmpty) {
+        for (final data in response) {
+          await _saveEntityToHive(tableName, data, box);
+        }
+        _userNoticeController.add(
+          'تم تحميل ${response.length} عنصر من $tableName بنجاح',
+        );
+      }
+    } catch (e) {
+      dev.log('Error downloading $tableName: $e', name: 'sync');
+      rethrow;
+    }
+  }
+
+  Future<void> _saveEntityToHive(
+    String tableName,
+    Map<String, dynamic> data,
+    Box box,
+  ) async {
+    try {
+      switch (tableName) {
+        case 'batches':
+          final entity = BatchEntity(
+            id: data['id'] as String,
+            name: data['name'] as String,
+            date: DateTime.parse(data['date'] as String),
+            supplier: data['supplier'] as String,
+            chickCount: data['chickcount'] as int,
+            chickBuyPrice: (data['chickbuyprice'] as num).toDouble(),
+            note: data['note'] as String?,
+            userId: data['userId'] as String,
+            updatedAt: DateTime.parse(data['updatedat'] as String),
+          );
+          // Check if entity already exists to avoid duplicates
+          final exists = (box as Box<BatchEntity>).values.any(
+            (b) => b.id == entity.id,
+          );
+          if (!exists) {
+            await box.add(entity);
+          }
+          break;
+        case 'additions':
+          final entity = AdditionEntity(
+            id: data['id'] as String,
+            batchId: data['batchid'] as String,
+            name: data['name'] as String,
+            cost: (data['cost'] as num).toDouble(),
+            date: DateTime.parse(data['date'] as String),
+            userId: data['userId'] as String,
+            updatedAt: DateTime.parse(data['updatedat'] as String),
+          );
+          final exists = (box as Box<AdditionEntity>).values.any(
+            (a) => a.id == entity.id,
+          );
+          if (!exists) {
+            await box.add(entity);
+          }
+          break;
+        case 'deaths':
+          final entity = DeathEntity(
+            id: data['id'] as String,
+            batchId: data['batchid'] as String,
+            count: data['count'] as int,
+            date: DateTime.parse(data['date'] as String),
+            userId: data['userId'] as String,
+            updatedAt: DateTime.parse(data['updatedat'] as String),
+          );
+          final exists = (box as Box<DeathEntity>).values.any(
+            (d) => d.id == entity.id,
+          );
+          if (!exists) {
+            await box.add(entity);
+          }
+          break;
+        case 'sales':
+          final entity = SaleEntity(
+            id: data['id'] as String,
+            batchId: data['batchid'] as String,
+            buyerName: data['buyername'] as String,
+            date: DateTime.parse(data['date'] as String),
+            chickCount: data['chickcount'] as int,
+            pricePerChick: (data['priceperchick'] as num).toDouble(),
+            paidAmount: (data['paidamount'] as num).toDouble(),
+            note: data['note'] as String?,
+            userId: data['userId'] as String,
+            updatedAt: DateTime.parse(data['updatedat'] as String),
+          );
+          final exists = (box as Box<SaleEntity>).values.any(
+            (s) => s.id == entity.id,
+          );
+          if (!exists) {
+            await box.add(entity);
+          }
+          break;
+      }
+    } catch (e) {
+      dev.log('Error saving $tableName entity to Hive: $e', name: 'sync');
+      rethrow;
+    }
   }
 
   Future<void> _updateLocalFromSupabase(
