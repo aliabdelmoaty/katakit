@@ -3,7 +3,6 @@ import '../entities/death_entity.dart';
 import '../services/sync_service.dart';
 import '../services/sync_queue.dart';
 import '../services/connection_service.dart';
-import 'dart:developer' as dev;
 
 abstract class IDeathRepository {
   Future<List<DeathEntity>> getDeathsByBatchId(String batchId);

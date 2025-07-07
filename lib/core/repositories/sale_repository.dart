@@ -3,7 +3,6 @@ import '../entities/sale_entity.dart';
 import '../services/sync_service.dart';
 import '../services/sync_queue.dart';
 import '../services/connection_service.dart';
-import 'dart:developer' as dev;
 
 abstract class ISaleRepository {
   Future<List<SaleEntity>> getSalesByBatchId(String batchId);

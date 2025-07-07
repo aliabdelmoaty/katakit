@@ -9,7 +9,6 @@ import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/sales_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
 import 'add_sale_screen.dart';
-import 'edit_sale_screen.dart';
 import '../../../../core/services/sync_service.dart';
 
 class SalesScreen extends StatefulWidget {

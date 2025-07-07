@@ -3,7 +3,6 @@ import '../entities/addition_entity.dart';
 import '../services/sync_service.dart';
 import '../services/sync_queue.dart';
 import '../services/connection_service.dart';
-import 'dart:developer' as dev;
 
 abstract class IAdditionRepository {
   Future<List<AdditionEntity>> getAdditionsByBatchId(String batchId);

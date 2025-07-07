@@ -8,9 +8,6 @@ import '../../cubit/batches_cubit.dart';
 import 'add_batch_screen.dart';
 import 'batch_details_screen.dart';
 import '../../../../core/services/sync_service.dart';
-import '../../../additions/presentation/screens/additions_screen.dart';
-import '../../../deaths/presentation/screens/deaths_screen.dart';
-import '../../../sales/presentation/screens/sales_screen.dart';
 import 'package:katakit/features/auth/cubit/auth_cubit.dart' as auth;
 
 class BatchesScreen extends StatefulWidget {

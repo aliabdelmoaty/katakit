@@ -6,7 +6,6 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/entities/addition_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/additions_cubit.dart';
 import '../../../auth/cubit/auth_cubit.dart';
 
