@@ -17,6 +17,9 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'dart:developer' as dev;
 import 'core/services/connection_service.dart';
 import 'core/services/sync_service.dart';
+import 'core/services/navigation_service.dart';
+import 'core/utils/app_utils.dart';
+import 'core/widgets/loading_overlay.dart';
 
 const supabaseUrl = 'https://qqrgsjguqhbshrypjsti.supabase.co';
 const supabaseAnonKey =
@@ -70,6 +73,7 @@ class MyApp extends StatelessWidget {
             title: 'كتاكيت عبد المعطي',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,
             locale: const Locale('ar', 'EG'),
             supportedLocales: const [Locale('ar', 'EG')],
@@ -78,10 +82,16 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            navigatorKey: NavigationService().navigatorKey,
             builder: (context, child) {
+              // Setup system UI style
+              AppUtils.setupSystemUIOverlayStyle();
+              AppUtils.enableFullScreenMode();
+
+              // Apply RTL direction for Arabic
               return Directionality(
                 textDirection: TextDirection.rtl,
-                child: child!,
+                child: LoadingOverlay(isLoading: false, child: child!),
               );
             },
             home: BlocBuilder<auth.AuthCubit, auth.AuthState>(
