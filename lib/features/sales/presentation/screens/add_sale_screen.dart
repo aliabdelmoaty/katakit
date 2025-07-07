@@ -138,7 +138,7 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
       appBar: AppBar(
         title: Text(
           'إضافة عملية بيع جديدة',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color: AppTheme.textLight,
             fontWeight: FontWeight.bold,
           ),
@@ -147,13 +147,13 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
         foregroundColor: AppTheme.textLight,
         elevation: 0,
         centerTitle: true,
+        toolbarHeight: 50.h,
       ),
       body: MultiBlocListener(
         listeners: [
           BlocListener<SalesCubit, SalesState>(
             listener: (context, state) {
               if (state is SalesLoaded) {
-                // تحديث النموذج عند تغيير البيانات
                 setState(() {});
               }
             },
@@ -161,7 +161,6 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
           BlocListener<DeathsCubit, DeathsState>(
             listener: (context, state) {
               if (state is DeathsLoaded) {
-                // تحديث النموذج عند تغيير البيانات
                 setState(() {});
               }
             },
@@ -191,10 +190,19 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                 return Form(
                   key: _formKey,
                   child: ListView(
-                    padding: EdgeInsets.all(16.w),
+                    padding: EdgeInsets.all(8.w),
                     children: [
-                      _buildSectionTitle('معلومات المشتري'),
+                      // معلومات الدفعة (مدمجة في الأعلى)
+                      _buildBatchInfoHeader(
+                        availableForSale,
+                        totalSold,
+                        totalDeaths,
+                      ),
                       SizedBox(height: 12.h),
+
+                      // معلومات المشتري
+                      _buildSectionTitle('معلومات المشتري'),
+                      SizedBox(height: 8.h),
                       EnhancedTextField(
                         controller: _buyerNameController,
                         label: 'اسم المشتري',
@@ -207,60 +215,71 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 20.h),
+                      SizedBox(height: 12.h),
+
+                      // تفاصيل البيع
                       _buildSectionTitle('تفاصيل البيع'),
-                      SizedBox(height: 12.h),
-                      EnhancedTextField(
-                        controller: _chickCountController,
-                        label: 'عدد الكتاكيت المباعة',
-                        icon: Icons.sell,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'يرجى إدخال عدد الكتاكيت';
-                          }
-                          final count = int.tryParse(value);
-                          if (count == null || count <= 0) {
-                            return 'يرجى إدخال عدد صحيح موجب';
-                          }
-                          if (count > availableForSale) {
-                            return 'عدد الكتاكيت لا يمكن أن يتجاوز العدد المتاح للبيع ($availableForSale)';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 12.h),
-                      EnhancedTextField(
-                        controller: _pricePerChickController,
-                        label: 'سعر البيع للكتكوت (جنيه)',
-                        icon: Icons.attach_money,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d*\.?\d*'),
+                      SizedBox(height: 5.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: EnhancedTextField(
+                              controller: _chickCountController,
+                              label: 'عدد الكتاكيت',
+                              icon: Icons.sell,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'يرجى إدخال العدد';
+                                }
+                                final count = int.tryParse(value);
+                                if (count == null || count <= 0) {
+                                  return 'عدد غير صحيح';
+                                }
+                                if (count > availableForSale) {
+                                  return 'تجاوز المتاح ($availableForSale)';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 5.w),
+                          Expanded(
+                            child: EnhancedTextField(
+                              controller: _pricePerChickController,
+                              label: 'السعر (جنيه)',
+                              icon: Icons.attach_money,
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d*'),
+                                ),
+                              ],
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'يرجى إدخال السعر';
+                                }
+                                final price = double.tryParse(value);
+                                if (price == null || price <= 0) {
+                                  return 'سعر غير صحيح';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                         ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'يرجى إدخال سعر البيع';
-                          }
-                          final price = double.tryParse(value);
-                          if (price == null || price <= 0) {
-                            return 'يرجى إدخال سعر صحيح';
-                          }
-                          return null;
-                        },
                       ),
-                      SizedBox(height: 20.h),
-                      _buildSectionTitle('المدفوعات'),
-                      SizedBox(height: 12.h),
-                      _buildTotalPriceCard(),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 10.h),
+                      // السعر الإجمالي (مبسط)
+                      if (_totalPrice > 0) _buildTotalPriceCard(),
+                      if (_totalPrice > 0) SizedBox(height: 10.h),
+
+                      // المبلغ المدفوع
                       EnhancedTextField(
                         controller: _paidAmountController,
                         label: 'المبلغ المدفوع (جنيه)',
@@ -278,40 +297,55 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                           }
                           final amount = double.tryParse(value);
                           if (amount == null || amount < 0) {
-                            return 'يرجى إدخال مبلغ صحيح';
+                            return 'مبلغ غير صحيح';
                           }
                           if (amount > _totalPrice) {
-                            return 'المبلغ المدفوع لا يمكن أن يتجاوز السعر الإجمالي';
+                            return 'لا يمكن أن يتجاوز السعر الإجمالي';
                           }
                           return null;
                         },
                       ),
-                      SizedBox(height: 12.h),
-                      _buildRemainingAmountCard(),
-                      SizedBox(height: 12.h),
+
+                      // حالة الدفع (مبسطة)
+                      if (_totalPrice > 0 &&
+                          _paidAmountController.text.isNotEmpty) ...[
+                        SizedBox(height: 8.h),
+                        _buildPaymentStatus(),
+                      ],
+
+                      SizedBox(height: 10.h),
+
+                      // التاريخ والملاحظات
                       EnhancedDateField(
                         label: 'تاريخ البيع',
                         selectedDate: _selectedDate,
                         onTap: _selectDate,
                       ),
-                      SizedBox(height: 20.h),
-                      _buildSectionTitle('ملاحظات إضافية'),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 10.h),
                       EnhancedTextField(
                         controller: _noteController,
                         label: 'ملاحظات (اختياري)',
                         icon: Icons.note,
-                        maxLines: 3,
-                        textInputAction: TextInputAction.newline,
+                        maxLines: 1,
+                        textInputAction: TextInputAction.done,
                       ),
+
                       SizedBox(height: 20.h),
-                      _buildInfoCard(availableForSale, totalSold, totalDeaths),
-                      SizedBox(height: 24.h),
+
+                      // زر الإضافة
                       SizedBox(
                         width: double.infinity,
-                        height: 56.h,
-                        child: ElevatedButton(
+                        height: 48.h,
+                        child: ElevatedButton.icon(
                           onPressed: availableForSale > 0 ? _submitForm : null,
+                          icon: Icon(Icons.add, size: 18.w),
+                          label: Text(
+                            availableForSale > 0
+                                ? 'إضافة عملية البيع'
+                                : 'لا يوجد كتاكيت متاحة للبيع',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 availableForSale > 0
@@ -322,26 +356,13 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                                     ? AppTheme.textMain
                                     : AppTheme.textSecondary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
+                              borderRadius: BorderRadius.circular(10.r),
                             ),
-                            elevation: 4,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add, size: 20.w),
-                              SizedBox(width: 8.w),
-                              Text(
-                                availableForSale > 0
-                                    ? 'إضافة عملية البيع'
-                                    : 'لا يوجد كتاكيت متاحة للبيع',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ],
+                            elevation: 3,
                           ),
                         ),
                       ),
+                      SizedBox(height: 16.h),
                     ],
                   ),
                 );
@@ -355,15 +376,15 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: AppTheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(6.r),
         border: Border.all(color: AppTheme.primary.withOpacity(0.3), width: 1),
       ),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
           color: AppTheme.primary,
           fontWeight: FontWeight.bold,
         ),
@@ -371,182 +392,115 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  Widget _buildTotalPriceCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: AppTheme.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(Icons.calculate, color: AppTheme.accent, size: 24.w),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'السعر الإجمالي',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '${_totalPrice.toStringAsFixed(2)} جنيه',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.accent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRemainingAmountCard() {
-    final isFullyPaid = _remainingAmount <= 0;
-    final isPartiallyPaid =
-        _remainingAmount > 0 && _remainingAmount < _totalPrice;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: BoxDecoration(
-                    color:
-                        isFullyPaid
-                            ? AppTheme.success.withOpacity(0.1)
-                            : isPartiallyPaid
-                            ? AppTheme.warning.withOpacity(0.1)
-                            : AppTheme.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Icon(
-                    isFullyPaid
-                        ? Icons.check_circle
-                        : isPartiallyPaid
-                        ? Icons.pending
-                        : Icons.money_off,
-                    color:
-                        isFullyPaid
-                            ? AppTheme.success
-                            : isPartiallyPaid
-                            ? AppTheme.warning
-                            : AppTheme.error,
-                    size: 20.w,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Text(
-                  'حالة الدفع',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textMain,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildPaymentInfoItem(
-                    'المدفوع',
-                    '${(double.tryParse(_paidAmountController.text) ?? 0.0).toStringAsFixed(2)} جنيه',
-                    AppTheme.success,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildPaymentInfoItem(
-                    'الباقي',
-                    '${_remainingAmount.toStringAsFixed(2)} جنيه',
-                    isFullyPaid ? AppTheme.success : AppTheme.error,
-                  ),
-                ),
-              ],
-            ),
-            if (isPartiallyPaid) ...[
-              SizedBox(height: 12.h),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(
-                    color: AppTheme.warning.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppTheme.warning,
-                      size: 16.w,
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'يمكن إضافة مدفوعات إضافية لاحقاً من شاشة المبيعات',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.warning,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentInfoItem(String label, String value, Color color) {
+  Widget _buildBatchInfoHeader(
+    int availableForSale,
+    int totalSold,
+    int totalDeaths,
+  ) {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primary.withOpacity(0.1),
+            AppTheme.accent.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary),
+          _buildInfoColumn(
+            'إجمالي',
+            '${widget.batch.chickCount}',
+            AppTheme.primary,
+            Icons.inventory,
           ),
-          SizedBox(height: 4.h),
+          _buildInfoColumn(
+            'المتاح',
+            '$availableForSale',
+            availableForSale > 0 ? AppTheme.success : AppTheme.error,
+            Icons.shopping_cart,
+          ),
+          _buildInfoColumn('مباع', '$totalSold', AppTheme.accent, Icons.sell),
+          _buildInfoColumn(
+            'وفيات',
+            '$totalDeaths',
+            AppTheme.error,
+            Icons.close,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoColumn(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: EdgeInsets.all(6.w),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6.r),
+          ),
+          child: Icon(icon, color: color, size: 16.w),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTotalPriceCard() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: AppTheme.accent.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calculate, color: AppTheme.accent, size: 16.w),
+              SizedBox(width: 8.w),
+              Text(
+                'السعر الإجمالي',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
           Text(
-            value,
+            '${_totalPrice.toStringAsFixed(2)} جنيه',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: color,
+              color: AppTheme.accent,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -555,126 +509,42 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
     );
   }
 
-  Widget _buildInfoCard(int availableForSale, int totalSold, int totalDeaths) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.info_outline, color: AppTheme.info, size: 20.w),
-                SizedBox(width: 8.w),
-                Text(
-                  'معلومات الدفعة',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textMain,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoItem(
-                    'إجمالي الكتاكيت',
-                    '${widget.batch.chickCount} كتكوت',
-                    AppTheme.primary,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildInfoItem(
-                    'المتاح للبيع',
-                    '$availableForSale كتكوت',
-                    availableForSale > 0 ? AppTheme.success : AppTheme.error,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoItem(
-                    'المباع',
-                    '$totalSold كتكوت',
-                    AppTheme.accent,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildInfoItem(
-                    'الوفيات',
-                    '$totalDeaths كتكوت',
-                    AppTheme.error,
-                  ),
-                ),
-              ],
-            ),
-            if (availableForSale <= 0) ...[
-              SizedBox(height: 12.h),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(
-                    color: AppTheme.error.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning, color: AppTheme.error, size: 16.w),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'لا يوجد كتاكيت متاحة للبيع',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildPaymentStatus() {
+    final isFullyPaid = _remainingAmount <= 0;
+    final color = isFullyPaid ? AppTheme.success : AppTheme.warning;
+    final icon = isFullyPaid ? Icons.check_circle : Icons.pending;
+    final statusText = isFullyPaid ? 'مدفوع كاملاً' : 'دفع جزئي';
 
-  Widget _buildInfoItem(String label, String value, Color color) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: AppTheme.textSecondary),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
+          Icon(icon, color: color, size: 16.w),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  statusText,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (!isFullyPaid)
+                  Text(
+                    'باقي: ${_remainingAmount.toStringAsFixed(2)} جنيه',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
