@@ -1,11 +1,11 @@
 {
-    "name": "katakit",
-    "short_name": "katakit",
+    "name": "كتكوت",
+    "short_name": "كتكوت",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "تطبيق كتكوت - مساعدة مربّي الدواجن على تتبع الربح والخسارة",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

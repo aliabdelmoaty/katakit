@@ -1,6 +1,6 @@
 flutter_native_splash:
-  # Background color
-  color: "#FFFFFF"
+  # Background color - لون الخلفية الرئيسي للتطبيق
+  color: "#FAF8F2"
   
   # Image to display
   image: assets/images/logo.png
@@ -8,8 +8,7 @@ flutter_native_splash:
   # Branding
   branding: assets/images/logo.png
   
-  # Color of the branding image  
-  # Background color for dark mode
+  # Background color for dark mode - لون الخلفية للوضع المظلم
   color_dark: "#121212"
   
   # Fullscreen mode
@@ -18,15 +17,14 @@ flutter_native_splash:
   # Android configuration
   android_12:
     image: assets/images/logo.png
-    icon_background_color: "#FFFFFF"
-    icon_background_color_dark: "#121212"
+    icon_background_color: "#795548"  # اللون الأساسي البني
+    icon_background_color_dark: "#FFB300"  # اللون الذهبي للوضع المظلم
   
   # iOS configuration
   ios: true
   
   # Web configuration
   web: false
-  
 
   # Custom text
   android_gravity: center
