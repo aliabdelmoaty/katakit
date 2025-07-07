@@ -30,6 +30,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   # Native Splash Screen
   flutter_native_splash: ^2.4.0
+  supabase_flutter: ^2.9.1
+  internet_connection_checker: ^3.0.1
 
 dev_dependencies:
   flutter_test:

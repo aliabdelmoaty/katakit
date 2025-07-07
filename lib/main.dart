@@ -9,10 +9,26 @@ import 'features/batches/cubit/batches_cubit.dart';
 import 'features/additions/cubit/additions_cubit.dart';
 import 'features/deaths/cubit/deaths_cubit.dart';
 import 'features/sales/cubit/sales_cubit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'features/auth/cubit/auth_cubit.dart';
+import 'features/auth/repository/auth_repository.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
+import 'dart:developer' as dev;
+import 'core/services/connection_service.dart';
+
+const supabaseUrl = 'https://qqrgsjguqhbshrypjsti.supabase.co';
+const supabaseAnonKey =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxcmdzamd1cWhic2hyeXBqc3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4ODMyNDEsImV4cCI6MjA2NzQ1OTI0MX0.ZINXdpvWcThzAKlf9nzE0r8IK-MYRDwQQt2uxGNIhxs';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   await init();
+  final connected = await ConnectionService().isConnected;
+  dev.log(
+    'Internet connection: ${connected ? 'Online' : 'Offline'}',
+    name: 'connection',
+  );
   runApp(const MyApp());
 }
 
@@ -27,6 +43,9 @@ class MyApp extends StatelessWidget {
         BlocProvider<AdditionsCubit>(create: (context) => sl<AdditionsCubit>()),
         BlocProvider<DeathsCubit>(create: (context) => sl<DeathsCubit>()),
         BlocProvider<SalesCubit>(create: (context) => sl<SalesCubit>()),
+        BlocProvider<AuthCubit>(
+          create: (_) => AuthCubit(authRepository: AuthRepository()),
+        ),
       ],
       child: ScreenUtilInit(
         designSize: const Size(360, 690),
@@ -51,7 +70,7 @@ class MyApp extends StatelessWidget {
                 child: child!,
               );
             },
-            home: const BatchesScreen(),
+            home: const LoginScreen(),
           );
         },
       ),
