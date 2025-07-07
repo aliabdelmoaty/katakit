@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/entities/sale_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/sales_cubit.dart';
 
 class EditSaleScreen extends StatefulWidget {
@@ -418,6 +419,13 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
             label: 'المبلغ الإضافي (جنيه)',
             icon: Icons.payment,
             maxAmount: _remainingAmount,
+            onSubmitted: () {
+              final canSubmit = _remainingAmount > 0 && _newPaymentAmount > 0;
+              // Handle the submission logic here
+              if (_formKey.currentState!.validate() && canSubmit) {
+                _addPayment();
+              }
+            },
           ),
         ],
       ),
@@ -429,8 +437,11 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
     required String label,
     required IconData icon,
     required double maxAmount,
+    required void Function() onSubmitted,
   }) {
-    return TextFormField(
+    return EnhancedTextField(
+      onSubmitted: onSubmitted,
+      label: label,
       controller: controller,
       keyboardType: TextInputType.number,
       inputFormatters: [
@@ -449,45 +460,9 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
         }
         return null;
       },
-      style: TextStyle(fontSize: 16.sp), // إضافة حجم خط أكبر للنص المدخل
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(fontSize: 14.sp), // إضافة حجم خط أكبر للـ label
-        hintText: 'أقصى مبلغ: ${maxAmount.toStringAsFixed(0)} جنيه',
-        hintStyle: TextStyle(fontSize: 13.sp), // إضافة حجم خط للـ hint
-        prefixIcon: Icon(
-          icon,
-          color: AppTheme.primary,
-          size: 20.w,
-        ), // زيادة من 18.w إلى 20.w
-        suffixText: 'جنيه',
-        suffixStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppTheme.textSecondary,
-          fontSize: 12.sp, // إضافة حجم خط للـ suffix
-        ),
-        filled: true,
-        fillColor: AppTheme.scaffoldLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r), // زيادة من 8.r إلى 10.r
-          borderSide: BorderSide(color: AppTheme.textFaint.withOpacity(0.5)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(color: AppTheme.textFaint.withOpacity(0.5)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(color: AppTheme.error),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 14.w,
-          vertical: 16.h,
-        ), // زيادة الـ padding
-      ),
+      hintText: 'أقصى مبلغ: ${maxAmount.toStringAsFixed(0)} جنيه',
+      suffixText: 'جنيه',
+      icon: icon,
     );
   }
 

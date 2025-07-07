@@ -22,356 +22,420 @@ class AdditionsScreen extends StatefulWidget {
   State<AdditionsScreen> createState() => _AdditionsScreenState();
 }
 
-class _AdditionsScreenState extends State<AdditionsScreen> {
+class _AdditionsScreenState extends State<AdditionsScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabAnimation;
+
   @override
   void initState() {
     super.initState();
+    _fabAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabAnimation = CurvedAnimation(
+      parent: _fabAnimationController,
+      curve: Curves.easeInOut,
+    );
+
     context.read<AdditionsCubit>().loadAdditions(widget.batch.id);
+    _fabAnimationController.forward();
+
     SyncService().userNoticeStream.listen((msg) {
       if (mounted && msg.isNotEmpty) {
         Color bgColor = Colors.blue;
+        IconData icon = Icons.info;
+
         if (msg.contains('خطأ') || msg.contains('error')) {
-          bgColor = Colors.red;
+          bgColor = AppTheme.error;
+          icon = Icons.error;
         } else if (msg.contains('تمت') ||
             msg.contains('اكتملت') ||
             msg.contains('نجاح')) {
-          bgColor = Colors.green;
+          bgColor = AppTheme.success;
+          icon = Icons.check_circle;
         } else if (msg.contains('لا يوجد اتصال')) {
-          bgColor = Colors.orange;
+          bgColor = AppTheme.warning;
+          icon = Icons.wifi_off;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: bgColor));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 20.w),
+                SizedBox(width: 8.w),
+                Expanded(child: Text(msg)),
+              ],
+            ),
+            backgroundColor: bgColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
       }
     });
   }
 
   @override
+  void dispose() {
+    _fabAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'مصروفات ${widget.batch.name}',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppTheme.textLight,
-            fontWeight: FontWeight.bold,
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(child: SizedBox(height: 8.h)),
+          BlocBuilder<AdditionsCubit, AdditionsState>(
+            builder: (context, state) {
+              if (state is AdditionsLoading) {
+                return SliverFillRemaining(child: _buildLoadingState());
+              } else if (state is AdditionsLoaded) {
+                return SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildEnhancedSummaryCard(state.totalCost),
+                    SizedBox(height: 8.h),
+                    if (state.additions.isEmpty)
+                      _buildEmptyState()
+                    else
+                      _buildAdditionsList(state.additions),
+                    SizedBox(height: 100.h), // Space for FAB
+                  ]),
+                );
+              } else if (state is AdditionsError) {
+                return SliverFillRemaining(
+                  child: _buildErrorState(state.message),
+                );
+              }
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            },
           ),
-        ),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: AppTheme.textLight,
-        elevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(32),
-          child:
-              widget.syncStatusStream != null
-                  ? StreamBuilder<SyncStatus>(
-                    stream: widget.syncStatusStream,
-                    builder: (context, snapshot) {
-                      final status = snapshot.data;
-                      if (status == null) return const SizedBox(height: 0);
-                      IconData icon;
-                      String text;
-                      Color color;
-                      switch (status) {
-                        case SyncStatus.synced:
-                          icon = Icons.check_circle;
-                          text = 'تمت المزامنة';
-                          color = AppTheme.success;
-                          break;
-                        case SyncStatus.syncing:
-                          icon = Icons.sync;
-                          text = 'جاري المزامنة...';
-                          color = AppTheme.info;
-                          break;
-                        case SyncStatus.offline:
-                          icon = Icons.wifi_off;
-                          text = 'أوفلاين - في انتظار الاتصال';
-                          color = AppTheme.warning;
-                          break;
-                        case SyncStatus.error:
-                          icon = Icons.error;
-                          text = 'خطأ في المزامنة';
-                          color = AppTheme.error;
-                          break;
-                        default:
-                          icon = Icons.sync;
-                          text = '';
-                          color = AppTheme.info;
-                      }
-                      return Container(
-                        height: 32,
-                        color: color.withOpacity(0.08),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(icon, color: color, size: 18),
-                            const SizedBox(width: 8),
-                            Text(text, style: TextStyle(color: color)),
-                          ],
-                        ),
-                      );
-                    },
-                  )
-                  : const SizedBox(height: 0),
-        ),
+        ],
       ),
-      body: BlocBuilder<AdditionsCubit, AdditionsState>(
-        builder: (context, state) {
-          if (state is AdditionsLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: AppTheme.primary,
-                    strokeWidth: 3.w,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'جاري التحميل...',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else if (state is AdditionsLoaded) {
-            return Column(
-              children: [
-                _buildSummaryCard(state.totalCost),
-                Expanded(
-                  child:
-                      state.additions.isEmpty
-                          ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(20.w),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.cardLight,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.textFaint.withOpacity(
-                                          0.1,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.receipt_long,
-                                    size: 56.w,
-                                    color: AppTheme.textFaint,
-                                  ),
-                                ),
-                                SizedBox(height: 16.h),
-                                Text(
-                                  'لا توجد مصروفات',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.copyWith(
-                                    color: AppTheme.textMain,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 6.h),
-                                Text(
-                                  'اضغط على زر الإضافة لتسجيل مصروف جديد',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: AppTheme.textSecondary),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          )
-                          : ListView.builder(
-                            padding: EdgeInsets.all(12.w),
-                            itemCount: state.additions.length,
-                            itemBuilder: (context, index) {
-                              final addition = state.additions[index];
-                              return AdditionCard(
-                                addition: addition,
-                                onDelete: () {
-                                  context.read<AdditionsCubit>().deleteAddition(
-                                    addition.id,
-                                    widget.batch.id,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                ),
-              ],
-            );
-          } else if (state is AdditionsError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.error_outline,
-                      size: 64.w,
-                      color: AppTheme.error,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  Text(
-                    'حدث خطأ',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    state.message,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<AdditionsCubit>().loadAdditions(
-                        widget.batch.id,
-                      );
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('إعادة المحاولة'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: AppTheme.textLight,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.w,
-                        vertical: 12.h,
+      floatingActionButton: ScaleTransition(
+        scale: _fabAnimation,
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder:
+                    (context, animation, secondaryAnimation) =>
+                        AddAdditionScreen(batch: widget.batch),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
                       ),
                     ),
-                  ),
-                ],
+                    child: child,
+                  );
+                },
               ),
             );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddAdditionScreen(batch: widget.batch),
-            ),
-          );
-        },
-        backgroundColor: AppTheme.accent,
-        foregroundColor: AppTheme.textMain,
-        icon: const Icon(Icons.add),
-        label: const Text('مصروف جديد'),
+          },
+          backgroundColor: AppTheme.accent,
+          foregroundColor: AppTheme.textMain,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('مصروف جديد'),
+          elevation: 8,
+          heroTag: "add_addition",
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryCard(double totalCost) {
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 180.h,
+      floating: false,
+      pinned: true,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppTheme.primaryGradient,
+            ),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.r)),
+          ),
+          child: Stack(
+            children: [
+              // Background pattern
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: const AssetImage('assets/images/pattern.png'),
+                        repeat: ImageRepeat.repeat,
+                        opacity: 0.1,
+                      ),
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(24.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Content
+              Positioned(
+                bottom: 20.h,
+                left: 20.w,
+                right: 20.w,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet_rounded,
+                            color: AppTheme.textLight,
+                            size: 28.w,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'مصروفات',
+                                style: TextStyle(
+                                  color: AppTheme.textLight.withOpacity(0.9),
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                widget.batch.name,
+                                style: TextStyle(
+                                  color: AppTheme.textLight,
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottom:
+          widget.syncStatusStream != null
+              ? PreferredSize(
+                preferredSize: Size.fromHeight(40.h),
+                child: _buildSyncStatusBar(),
+              )
+              : null,
+    );
+  }
+
+  Widget _buildSyncStatusBar() {
+    return StreamBuilder<SyncStatus>(
+      stream: widget.syncStatusStream,
+      builder: (context, snapshot) {
+        final status = snapshot.data;
+        if (status == null) return const SizedBox(height: 0);
+
+        IconData icon;
+        String text;
+        Color color;
+
+        switch (status) {
+          case SyncStatus.synced:
+            icon = Icons.check_circle_rounded;
+            text = 'تمت المزامنة';
+            color = AppTheme.success;
+            break;
+          case SyncStatus.syncing:
+            icon = Icons.sync_rounded;
+            text = 'جاري المزامنة...';
+            color = AppTheme.info;
+            break;
+          case SyncStatus.offline:
+            icon = Icons.wifi_off_rounded;
+            text = 'أوفلاين - في انتظار الاتصال';
+            color = AppTheme.warning;
+            break;
+          case SyncStatus.error:
+            icon = Icons.error_rounded;
+            text = 'خطأ في المزامنة';
+            color = AppTheme.error;
+            break;
+          default:
+            icon = Icons.sync_rounded;
+            text = '';
+            color = AppTheme.info;
+        }
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: 40.h,
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 18.w),
+              SizedBox(width: 8.w),
+              Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: CircularProgressIndicator(
+              color: AppTheme.primary,
+              strokeWidth: 3.w,
+            ),
+          ),
+          SizedBox(height: 24.h),
+          Text(
+            'جاري تحميل المصروفات...',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedSummaryCard(double totalCost) {
     final actualCostPerChick = _calculateActualCostPerChick(totalCost);
-    return Card(
-      margin: EdgeInsets.all(12.w),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.cardLight, AppTheme.cardLight.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(20.w),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(8.w),
+                  padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8.r),
+                    gradient: LinearGradient(colors: AppTheme.accentGradient),
+                    borderRadius: BorderRadius.circular(12.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.accent.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
-                    Icons.account_balance_wallet,
-                    color: AppTheme.primary,
-                    size: 20.w,
+                    Icons.account_balance_wallet_rounded,
+                    color: AppTheme.textMain,
+                    size: 24.w,
                   ),
                 ),
-                SizedBox(width: 12.w),
-                Text(
-                  'ملخص المصروفات',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppTheme.textMain,
-                    fontWeight: FontWeight.bold,
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Text(
+                    'ملخص المصروفات',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textMain,
+                    ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'إجمالي المصروفات',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '${totalCost.toStringAsFixed(2)} جنيه',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineSmall?.copyWith(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: AppTheme.accent.withOpacity(0.3),
-                      width: 1,
-                    ),
+                Expanded(
+                  child: _buildSummaryItem(
+                    'إجمالي المصروفات',
+                    '${totalCost.toStringAsFixed(2)} جنيه',
+                    Icons.receipt_long_rounded,
+                    AppTheme.primary,
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'التكلفة الحقيقية',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        '${actualCostPerChick.toStringAsFixed(2)} جنيه',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.accent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildSummaryItem(
+                    'التكلفة الحقيقية',
+                    '${actualCostPerChick.toStringAsFixed(2)} جنيه',
+                    Icons.trending_up_rounded,
+                    AppTheme.accent,
                   ),
                 ),
               ],
@@ -382,19 +446,311 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
     );
   }
 
+  Widget _buildSummaryItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(icon, color: color, size: 20.w),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      margin: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(32.w),
+      decoration: BoxDecoration(
+        color: AppTheme.cardLight,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.textFaint.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.textFaint.withOpacity(0.1),
+                  AppTheme.textFaint.withOpacity(0.05),
+                ],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_rounded,
+              size: 64.w,
+              color: AppTheme.textFaint,
+            ),
+          ),
+          SizedBox(height: 24.h),
+          Text(
+            'لا توجد مصروفات بعد',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: AppTheme.textMain,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'ابدأ بإضافة أول مصروف لهذه الدفعة\nلتتبع التكاليف بدقة',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textSecondary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: AppTheme.accent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.touch_app_rounded,
+                  color: AppTheme.accent,
+                  size: 16.w,
+                ),
+                SizedBox(width: 8.w),
+                GestureDetector(
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  AddAdditionScreen(batch: widget.batch),
+                          transitionsBuilder: (
+                            context,
+                            animation,
+                            secondaryAnimation,
+                            child,
+                          ) {
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 1),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              ),
+                              child: child,
+                            );
+                          },
+                        ),
+                      ),
+                  child: Text(
+                    'اضغط على زر الإضافة أدناه',
+                    style: TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdditionsList(List<AdditionEntity> additions) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      itemCount: additions.length,
+      itemBuilder: (context, index) {
+        return EnhancedAdditionCard(
+          addition: additions[index],
+          onDelete: () {
+            _showDeleteDialog(additions[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Container(
+        margin: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(32.w),
+        decoration: BoxDecoration(
+          color: AppTheme.cardLight,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.error.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: AppTheme.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 56.w,
+                color: AppTheme.error,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Text(
+              'حدث خطأ',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: AppTheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24.h),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.read<AdditionsCubit>().loadAdditions(widget.batch.id);
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة المحاولة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: AppTheme.textLight,
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(AdditionEntity addition) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: AppTheme.warning,
+                  size: 24.w,
+                ),
+                SizedBox(width: 8.w),
+                const Text('تأكيد الحذف'),
+              ],
+            ),
+            content: Text(
+              'هل أنت متأكد من حذف مصروف "${addition.name}"؟\nلا يمكن التراجع عن هذا الإجراء.',
+              style: TextStyle(height: 1.5, fontSize: 14.sp),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<AdditionsCubit>().deleteAddition(
+                    addition.id,
+                    widget.batch.id,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('حذف'),
+              ),
+            ],
+          ),
+    );
+  }
+
   double _calculateActualCostPerChick(double totalAdditionsCost) {
     final totalCost = widget.batch.totalBuyPrice + totalAdditionsCost;
-    final remainingChicks =
-        widget.batch.chickCount; // سيتم تحديثه لاحقاً مع الوفيات والمبيعات
+    final remainingChicks = widget.batch.chickCount;
     return remainingChicks > 0 ? totalCost / remainingChicks : 0.0;
   }
 }
 
-class AdditionCard extends StatelessWidget {
+class EnhancedAdditionCard extends StatelessWidget {
   final AdditionEntity addition;
   final VoidCallback onDelete;
 
-  const AdditionCard({
+  const EnhancedAdditionCard({
     super.key,
     required this.addition,
     required this.onDelete,
@@ -402,23 +758,43 @@ class AdditionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 8.h),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      decoration: BoxDecoration(
+        color: AppTheme.cardLight,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.textFaint.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: EdgeInsets.all(12.w),
+        padding: EdgeInsets.all(16.w),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
+                gradient: LinearGradient(colors: AppTheme.primaryGradient),
+                borderRadius: BorderRadius.circular(12.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(Icons.receipt, color: AppTheme.primary, size: 24.w),
+              child: Icon(
+                Icons.receipt_rounded,
+                color: AppTheme.textLight,
+                size: 24.w,
+              ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 16.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,26 +802,39 @@ class AdditionCard extends StatelessWidget {
                   Text(
                     addition.name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.textMain,
                       fontWeight: FontWeight.bold,
+                      color: AppTheme.textMain,
                     ),
                   ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 14.w,
-                        color: AppTheme.textSecondary,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        _formatDate(addition.date),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
+                  SizedBox(height: 6.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.info.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14.w,
+                          color: AppTheme.info,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 6.w),
+                        Text(
+                          _formatDate(addition.date),
+                          style: TextStyle(
+                            color: AppTheme.info,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -453,24 +842,37 @@ class AdditionCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${addition.cost.toStringAsFixed(2)} جنيه',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.accent,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    '${addition.cost.toStringAsFixed(2)} جنيه',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.accent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: 8.h),
                 IconButton(
                   onPressed: onDelete,
                   icon: Icon(
-                    Icons.delete_outline,
+                    Icons.delete_outline_rounded,
                     color: AppTheme.error,
                     size: 20.w,
                   ),
                   style: IconButton.styleFrom(
                     backgroundColor: AppTheme.error.withOpacity(0.1),
                     padding: EdgeInsets.all(8.w),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                   ),
                 ),
               ],
@@ -482,6 +884,20 @@ class AdditionCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    const months = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

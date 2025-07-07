@@ -507,56 +507,16 @@ class _AddDeathScreenState extends State<AddDeathScreen>
             },
           ),
           SizedBox(height: 16.h),
-          _buildDateSelector(),
+          EnhancedDateField(
+            label: 'تاريخ الوفاة',
+            selectedDate: _selectedDate,
+            onTap: _selectDate,
+          ),
           if (availableForDeaths <= 0) ...[
             SizedBox(height: 20.h),
             _buildWarningMessage(),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildDateSelector() {
-    return InkWell(
-      onTap: _selectDate,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today, color: AppTheme.primary, size: 20.w),
-            SizedBox(width: 12.w),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'تاريخ الوفاة',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_drop_down,
-              color: AppTheme.textSecondary,
-              size: 24.w,
-            ),
-          ],
-        ),
       ),
     );
   }
