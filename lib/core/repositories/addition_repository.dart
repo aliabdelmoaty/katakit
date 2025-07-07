@@ -28,17 +28,15 @@ class AdditionRepository implements IAdditionRepository {
   Future<void> addAddition(AdditionEntity addition) async {
     final box = await Hive.openBox<AdditionEntity>(_boxName);
     await box.add(addition);
-    if (!await _isOnline()) {
-      await SyncService().queueChange(
-        SyncQueueItem(
-          id: addition.id,
-          type: 'add',
-          entityType: 'addition',
-          data: additionToMap(addition),
-          createdAt: DateTime.now(),
-        ),
-      );
-    }
+    await SyncService().queueChange(
+      SyncQueueItem(
+        id: addition.id,
+        type: 'add',
+        entityType: 'addition',
+        data: additionToMap(addition),
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -47,17 +45,15 @@ class AdditionRepository implements IAdditionRepository {
     final index = box.values.toList().indexWhere((a) => a.id == addition.id);
     if (index != -1) {
       await box.putAt(index, addition);
-      if (!await _isOnline()) {
-        await SyncService().queueChange(
-          SyncQueueItem(
-            id: addition.id,
-            type: 'edit',
-            entityType: 'addition',
-            data: additionToMap(addition),
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: addition.id,
+          type: 'edit',
+          entityType: 'addition',
+          data: additionToMap(addition),
+          createdAt: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -68,7 +64,7 @@ class AdditionRepository implements IAdditionRepository {
     if (index != -1) {
       final addition = box.getAt(index);
       await box.deleteAt(index);
-      if (addition != null && !await _isOnline()) {
+      if (addition != null) {
         await SyncService().queueChange(
           SyncQueueItem(
             id: addition.id,
@@ -90,11 +86,11 @@ class AdditionRepository implements IAdditionRepository {
 
   Map<String, dynamic> additionToMap(AdditionEntity a) => {
     'id': a.id,
-    'batchId': a.batchId,
+    'batchid': a.batchId,
     'name': a.name,
     'cost': a.cost,
     'date': a.date.toIso8601String(),
     'userId': a.userId,
-    'updatedAt': a.updatedAt.toIso8601String(),
+    'updatedat': a.updatedAt.toIso8601String(),
   };
 }

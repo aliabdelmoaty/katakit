@@ -26,18 +26,30 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   await init();
+  final authCubit = auth.AuthCubit(authRepository: AuthRepository());
+  await authCubit.checkSession();
   final connected = await ConnectionService().isConnected;
   dev.log(
     'Internet connection: ${connected ? 'Online' : 'Offline'}',
     name: 'connection',
   );
   SyncService().startSync();
-  runApp(MyApp(syncStatusStream: SyncService().syncStatusStream));
+  runApp(
+    MyApp(
+      syncStatusStream: SyncService().syncStatusStream,
+      authCubit: authCubit,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   final Stream<SyncStatus> syncStatusStream;
-  const MyApp({super.key, required this.syncStatusStream});
+  final auth.AuthCubit authCubit;
+  const MyApp({
+    super.key,
+    required this.syncStatusStream,
+    required this.authCubit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +59,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<AdditionsCubit>(create: (context) => sl<AdditionsCubit>()),
         BlocProvider<DeathsCubit>(create: (context) => sl<DeathsCubit>()),
         BlocProvider<SalesCubit>(create: (context) => sl<SalesCubit>()),
-        BlocProvider<auth.AuthCubit>(
-          create: (_) => auth.AuthCubit(authRepository: AuthRepository()),
-        ),
+        BlocProvider<auth.AuthCubit>.value(value: authCubit),
       ],
       child: ScreenUtilInit(
         designSize: const Size(360, 690),

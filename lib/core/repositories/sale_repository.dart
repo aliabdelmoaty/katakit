@@ -29,17 +29,15 @@ class SaleRepository implements ISaleRepository {
   Future<void> addSale(SaleEntity sale) async {
     final box = await Hive.openBox<SaleEntity>(_boxName);
     await box.add(sale);
-    if (!await _isOnline()) {
-      await SyncService().queueChange(
-        SyncQueueItem(
-          id: sale.id,
-          type: 'add',
-          entityType: 'sale',
-          data: saleToMap(sale),
-          createdAt: DateTime.now(),
-        ),
-      );
-    }
+    await SyncService().queueChange(
+      SyncQueueItem(
+        id: sale.id,
+        type: 'add',
+        entityType: 'sale',
+        data: saleToMap(sale),
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -48,17 +46,15 @@ class SaleRepository implements ISaleRepository {
     final index = box.values.toList().indexWhere((s) => s.id == sale.id);
     if (index != -1) {
       await box.putAt(index, sale);
-      if (!await _isOnline()) {
-        await SyncService().queueChange(
-          SyncQueueItem(
-            id: sale.id,
-            type: 'edit',
-            entityType: 'sale',
-            data: saleToMap(sale),
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: sale.id,
+          type: 'edit',
+          entityType: 'sale',
+          data: saleToMap(sale),
+          createdAt: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -69,7 +65,7 @@ class SaleRepository implements ISaleRepository {
     if (index != -1) {
       final sale = box.getAt(index);
       await box.deleteAt(index);
-      if (sale != null && !await _isOnline()) {
+      if (sale != null) {
         await SyncService().queueChange(
           SyncQueueItem(
             id: sale.id,
@@ -97,14 +93,14 @@ class SaleRepository implements ISaleRepository {
 
   Map<String, dynamic> saleToMap(SaleEntity s) => {
     'id': s.id,
-    'batchId': s.batchId,
-    'buyerName': s.buyerName,
+    'batchid': s.batchId,
+    'buyername': s.buyerName,
     'date': s.date.toIso8601String(),
-    'chickCount': s.chickCount,
-    'pricePerChick': s.pricePerChick,
-    'paidAmount': s.paidAmount,
+    'chickcount': s.chickCount,
+    'priceperchick': s.pricePerChick,
+    'paidamount': s.paidAmount,
     'note': s.note,
     'userId': s.userId,
-    'updatedAt': s.updatedAt.toIso8601String(),
+    'updatedat': s.updatedAt.toIso8601String(),
   };
 }

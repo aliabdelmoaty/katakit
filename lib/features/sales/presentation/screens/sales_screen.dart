@@ -30,6 +30,23 @@ class _SalesScreenState extends State<SalesScreen> {
     super.initState();
     context.read<SalesCubit>().loadSales(widget.batch.id);
     context.read<DeathsCubit>().loadDeaths(widget.batch.id);
+    SyncService().userNoticeStream.listen((msg) {
+      if (mounted && msg.isNotEmpty) {
+        Color bgColor = Colors.blue;
+        if (msg.contains('خطأ') || msg.contains('error')) {
+          bgColor = Colors.red;
+        } else if (msg.contains('تمت') ||
+            msg.contains('اكتملت') ||
+            msg.contains('نجاح')) {
+          bgColor = Colors.green;
+        } else if (msg.contains('لا يوجد اتصال')) {
+          bgColor = Colors.orange;
+        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: bgColor));
+      }
+    });
   }
 
   @override

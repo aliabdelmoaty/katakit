@@ -27,6 +27,23 @@ class _AdditionsScreenState extends State<AdditionsScreen> {
   void initState() {
     super.initState();
     context.read<AdditionsCubit>().loadAdditions(widget.batch.id);
+    SyncService().userNoticeStream.listen((msg) {
+      if (mounted && msg.isNotEmpty) {
+        Color bgColor = Colors.blue;
+        if (msg.contains('خطأ') || msg.contains('error')) {
+          bgColor = Colors.red;
+        } else if (msg.contains('تمت') ||
+            msg.contains('اكتملت') ||
+            msg.contains('نجاح')) {
+          bgColor = Colors.green;
+        } else if (msg.contains('لا يوجد اتصال')) {
+          bgColor = Colors.orange;
+        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: bgColor));
+      }
+    });
   }
 
   @override

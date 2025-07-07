@@ -34,17 +34,15 @@ class BatchRepository implements IBatchRepository {
   Future<void> addBatch(BatchEntity batch) async {
     final box = await Hive.openBox<BatchEntity>(_boxName);
     await box.add(batch);
-    if (!await _isOnline()) {
-      await SyncService().queueChange(
-        SyncQueueItem(
-          id: batch.id,
-          type: 'add',
-          entityType: 'batch',
-          data: batchToMap(batch),
-          createdAt: DateTime.now(),
-        ),
-      );
-    }
+    await SyncService().queueChange(
+      SyncQueueItem(
+        id: batch.id,
+        type: 'add',
+        entityType: 'batch',
+        data: batchToMap(batch),
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -53,17 +51,15 @@ class BatchRepository implements IBatchRepository {
     final index = box.values.toList().indexWhere((b) => b.id == batch.id);
     if (index != -1) {
       await box.putAt(index, batch);
-      if (!await _isOnline()) {
-        await SyncService().queueChange(
-          SyncQueueItem(
-            id: batch.id,
-            type: 'edit',
-            entityType: 'batch',
-            data: batchToMap(batch),
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: batch.id,
+          type: 'edit',
+          entityType: 'batch',
+          data: batchToMap(batch),
+          createdAt: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -74,7 +70,7 @@ class BatchRepository implements IBatchRepository {
     if (index != -1) {
       final batch = box.getAt(index);
       await box.deleteAt(index);
-      if (batch != null && !await _isOnline()) {
+      if (batch != null) {
         await SyncService().queueChange(
           SyncQueueItem(
             id: batch.id,
@@ -93,10 +89,10 @@ class BatchRepository implements IBatchRepository {
     'name': b.name,
     'date': b.date.toIso8601String(),
     'supplier': b.supplier,
-    'chickCount': b.chickCount,
-    'chickBuyPrice': b.chickBuyPrice,
+    'chickcount': b.chickCount,
+    'chickbuyprice': b.chickBuyPrice,
     'note': b.note,
     'userId': b.userId,
-    'updatedAt': b.updatedAt.toIso8601String(),
+    'updatedat': b.updatedAt.toIso8601String(),
   };
 }

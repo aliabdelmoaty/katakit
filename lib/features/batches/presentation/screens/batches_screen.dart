@@ -11,6 +11,7 @@ import '../../../../core/services/sync_service.dart';
 import '../../../additions/presentation/screens/additions_screen.dart';
 import '../../../deaths/presentation/screens/deaths_screen.dart';
 import '../../../sales/presentation/screens/sales_screen.dart';
+import 'package:katakit/features/auth/cubit/auth_cubit.dart' as auth;
 
 class BatchesScreen extends StatefulWidget {
   final Stream<SyncStatus>? syncStatusStream;
@@ -29,6 +30,24 @@ class _BatchesScreenState extends State<BatchesScreen> {
   void initState() {
     super.initState();
     context.read<BatchesCubit>().loadBatches();
+    // إشعار المستخدم عند تحديث البيانات من السحابة
+    SyncService().userNoticeStream.listen((msg) {
+      if (mounted && msg.isNotEmpty) {
+        Color bgColor = Colors.blue;
+        if (msg.contains('خطأ') || msg.contains('error')) {
+          bgColor = Colors.red;
+        } else if (msg.contains('تمت') ||
+            msg.contains('اكتملت') ||
+            msg.contains('نجاح')) {
+          bgColor = Colors.green;
+        } else if (msg.contains('لا يوجد اتصال')) {
+          bgColor = Colors.orange;
+        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: bgColor));
+      }
+    });
   }
 
   @override
@@ -142,6 +161,27 @@ class _BatchesScreenState extends State<BatchesScreen> {
         foregroundColor: AppTheme.textLight,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'مزامنة يدوية',
+            onPressed: () async {
+              await SyncService().processQueue();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم بدء المزامنة اليدوية...')),
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'تسجيل الخروج',
+            onPressed: () {
+              context.read<auth.AuthCubit>().logout();
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(32),
           child:

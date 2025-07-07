@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../repository/auth_repository.dart';
+import 'package:hive/hive.dart';
 
 // States
 abstract class AuthState extends Equatable {
@@ -59,6 +60,12 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> logout() async {
     await authRepository.logout();
+    await Future.wait([
+      Hive.deleteBoxFromDisk('batches'),
+      Hive.deleteBoxFromDisk('additions'),
+      Hive.deleteBoxFromDisk('deaths'),
+      Hive.deleteBoxFromDisk('sales'),
+    ]);
     emit(Unauthenticated());
   }
 

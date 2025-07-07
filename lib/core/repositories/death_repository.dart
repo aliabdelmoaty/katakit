@@ -28,17 +28,15 @@ class DeathRepository implements IDeathRepository {
   Future<void> addDeath(DeathEntity death) async {
     final box = await Hive.openBox<DeathEntity>(_boxName);
     await box.add(death);
-    if (!await _isOnline()) {
-      await SyncService().queueChange(
-        SyncQueueItem(
-          id: death.id,
-          type: 'add',
-          entityType: 'death',
-          data: deathToMap(death),
-          createdAt: DateTime.now(),
-        ),
-      );
-    }
+    await SyncService().queueChange(
+      SyncQueueItem(
+        id: death.id,
+        type: 'add',
+        entityType: 'death',
+        data: deathToMap(death),
+        createdAt: DateTime.now(),
+      ),
+    );
   }
 
   @override
@@ -47,17 +45,15 @@ class DeathRepository implements IDeathRepository {
     final index = box.values.toList().indexWhere((d) => d.id == death.id);
     if (index != -1) {
       await box.putAt(index, death);
-      if (!await _isOnline()) {
-        await SyncService().queueChange(
-          SyncQueueItem(
-            id: death.id,
-            type: 'edit',
-            entityType: 'death',
-            data: deathToMap(death),
-            createdAt: DateTime.now(),
-          ),
-        );
-      }
+      await SyncService().queueChange(
+        SyncQueueItem(
+          id: death.id,
+          type: 'edit',
+          entityType: 'death',
+          data: deathToMap(death),
+          createdAt: DateTime.now(),
+        ),
+      );
     }
   }
 
@@ -68,7 +64,7 @@ class DeathRepository implements IDeathRepository {
     if (index != -1) {
       final death = box.getAt(index);
       await box.deleteAt(index);
-      if (death != null && !await _isOnline()) {
+      if (death != null) {
         await SyncService().queueChange(
           SyncQueueItem(
             id: death.id,
@@ -90,10 +86,10 @@ class DeathRepository implements IDeathRepository {
 
   Map<String, dynamic> deathToMap(DeathEntity d) => {
     'id': d.id,
-    'batchId': d.batchId,
+    'batchid': d.batchId,
     'count': d.count,
     'date': d.date.toIso8601String(),
     'userId': d.userId,
-    'updatedAt': d.updatedAt.toIso8601String(),
+    'updatedat': d.updatedAt.toIso8601String(),
   };
 }
