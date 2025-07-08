@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/auth_cubit.dart';
 import '../../../../../features/batches/presentation/screens/batches_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -123,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           }
           if (state is Authenticated) {
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const BatchesScreen()),
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
               (route) => false,
             );
           }
