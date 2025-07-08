@@ -5,9 +5,6 @@ flutter_native_splash:
   # Image to display
   image: assets/images/logo.png
   
-  # Branding
-  branding: assets/images/logo.png
-  
   
   # Fullscreen mode
   fullscreen: true

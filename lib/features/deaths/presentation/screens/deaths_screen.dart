@@ -1064,7 +1064,7 @@ class EnhancedDeathCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    final arabicFormatter = DateFormat('dd/MM/yyyy', 'ar');
-    return arabicFormatter.format(date);
+    final formatter = DateFormat('dd/MM/yyyy');
+    return formatter.format(date);
   }
 }

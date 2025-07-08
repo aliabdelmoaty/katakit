@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/di/service_locator.dart';
 import 'core/theme/app_theme.dart';
 import 'features/batches/presentation/screens/batches_screen.dart';
@@ -74,16 +73,9 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,
-            locale: const Locale('ar', 'EG'),
-            supportedLocales: const [Locale('ar', 'EG')],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            locale: const Locale('ar'),
             navigatorKey: NavigationService().navigatorKey,
             builder: (context, child) {
-              // Setup system UI style
               AppUtils.setupSystemUIOverlayStyle();
               AppUtils.enableFullScreenMode();
 

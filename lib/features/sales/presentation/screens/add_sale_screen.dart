@@ -227,55 +227,51 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
                       // تفاصيل البيع
                       _buildSectionTitle('تفاصيل البيع'),
                       SizedBox(height: 5.h),
-                      Expanded(
-                        child: EnhancedTextField(
-                          controller: _chickCountController,
-                          label: 'عدد الكتاكيت',
-                          icon: Icons.sell,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'يرجى إدخال العدد';
-                            }
-                            final count = int.tryParse(value);
-                            if (count == null || count <= 0) {
-                              return 'عدد غير صحيح';
-                            }
-                            if (count > availableForSale) {
-                              return 'تجاوز المتاح ($availableForSale)';
-                            }
-                            return null;
-                          },
-                        ),
+                      EnhancedTextField(
+                        controller: _chickCountController,
+                        label: 'عدد الكتاكيت',
+                        icon: Icons.sell,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'يرجى إدخال العدد';
+                          }
+                          final count = int.tryParse(value);
+                          if (count == null || count <= 0) {
+                            return 'عدد غير صحيح';
+                          }
+                          if (count > availableForSale) {
+                            return 'تجاوز المتاح ($availableForSale)';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 10.h),
-                      Expanded(
-                        child: EnhancedTextField(
-                          controller: _pricePerChickController,
-                          label: 'السعر (جنيه)',
-                          icon: Icons.attach_money,
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d*'),
-                            ),
-                          ],
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'يرجى إدخال السعر';
-                            }
-                            final price = double.tryParse(value);
-                            if (price == null || price <= 0) {
-                              return 'سعر غير صحيح';
-                            }
-                            return null;
-                          },
-                        ),
+                      EnhancedTextField(
+                        controller: _pricePerChickController,
+                        label: 'السعر (جنيه)',
+                        icon: Icons.attach_money,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*'),
+                          ),
+                        ],
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'يرجى إدخال السعر';
+                          }
+                          final price = double.tryParse(value);
+                          if (price == null || price <= 0) {
+                            return 'سعر غير صحيح';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 10.h),
                       // السعر الإجمالي (مبسط)
