@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/auth_cubit.dart';
@@ -60,17 +61,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
-              _showCustomSnackBar(context, state.message, isError: true);
+              context.showErrorSnackBar(state.message);
             }
             if (state is PasswordResetSuccess) {
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                 (route) => false,
               );
-              _showCustomSnackBar(
-                context,
+              context.showSuccessSnackBar(
                 'تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.',
-                isSuccess: true,
               );
             }
           },
@@ -274,61 +273,5 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     );
   }
 
-  void _showCustomSnackBar(
-    BuildContext context,
-    String message, {
-    bool isError = false,
-    bool isSuccess = false,
-  }) {
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color:
-                  isError
-                      ? AppTheme.error.withOpacity(0.2)
-                      : isSuccess
-                      ? AppTheme.success.withOpacity(0.2)
-                      : AppTheme.info.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              isError
-                  ? Icons.error_outline
-                  : isSuccess
-                  ? Icons.check_circle_outline
-                  : Icons.info_outline,
-              color:
-                  isError
-                      ? AppTheme.error
-                      : isSuccess
-                      ? AppTheme.success
-                      : AppTheme.info,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(fontSize: 14.sp, color: AppTheme.textLight),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor:
-          isError
-              ? AppTheme.error.withOpacity(0.9)
-              : isSuccess
-              ? AppTheme.success.withOpacity(0.9)
-              : AppTheme.info.withOpacity(0.9),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      margin: EdgeInsets.all(16.w),
-      duration: const Duration(seconds: 4),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
+  
 }

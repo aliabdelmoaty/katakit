@@ -40,28 +40,28 @@ class AppUtils {
 extension SnackBarExtension on BuildContext {
   void showSuccessSnackBar(
     String message, {
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 1),
   }) {
     _showSnackBar(message, SnackBarType.success, duration: duration);
   }
 
   void showErrorSnackBar(
     String message, {
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 1),
   }) {
     _showSnackBar(message, SnackBarType.error, duration: duration);
   }
 
   void showWarningSnackBar(
     String message, {
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 1),
   }) {
     _showSnackBar(message, SnackBarType.warning, duration: duration);
   }
 
   void showInfoSnackBar(
     String message, {
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 1),
   }) {
     _showSnackBar(message, SnackBarType.info, duration: duration);
   }
@@ -111,7 +111,7 @@ extension SnackBarExtension on BuildContext {
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: duration ?? const Duration(seconds: 4),
+        duration: duration ?? const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'إغلاق',
           textColor: textColor.withOpacity(0.8),
@@ -125,3 +125,21 @@ extension SnackBarExtension on BuildContext {
 }
 
 enum SnackBarType { success, error, warning, info }
+
+
+// example usage snack bar
+// void main() {
+//   runApp(MyApp());
+// }
+//
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       home: Scaffold(
+//         appBar: AppBar(title: Text('SnackBar Example')),
+//         body: Center(
+//           child: ElevatedButton(
+//             onPressed: () {
+//               context.showSuccessSnackBar('This is a success message!');
+//             },

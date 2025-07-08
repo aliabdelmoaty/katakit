@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/auth_cubit.dart';
@@ -118,31 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: AppTheme.textLight),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Text(
-                        state.message,
-                        style: TextStyle(
-                          color: AppTheme.textLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: AppTheme.error,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                margin: EdgeInsets.all(16.w),
-              ),
-            );
+            context.showErrorSnackBar(state.message);
           }
           if (state is Authenticated) {
             Navigator.of(context).pushAndRemoveUntil(

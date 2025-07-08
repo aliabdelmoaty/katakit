@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 import '../../cubit/batches_cubit.dart';
 import 'add_batch_screen.dart';
 import 'batch_details_screen.dart';
@@ -71,40 +73,24 @@ class _BatchesScreenState extends State<BatchesScreen>
   }
 
   void _showSyncNotification(String msg) {
-    Color bgColor = AppTheme.info;
-    IconData icon = Icons.info;
+
 
     if (msg.contains('خطأ') || msg.contains('error')) {
-      bgColor = AppTheme.error;
-      icon = Icons.error_outline;
+     context.showErrorSnackBar(
+       'حدث خطأ أثناء المزامنة: $msg'
+      );
+      
     } else if (msg.contains('تمت') ||
         msg.contains('اكتملت') ||
         msg.contains('نجاح')) {
-      bgColor = AppTheme.success;
-      icon = Icons.check_circle_outline;
+      context.showSuccessSnackBar(
+        'تمت المزامنة بنجاح: $msg',
+      );
     } else if (msg.contains('لا يوجد اتصال')) {
-      bgColor = AppTheme.warning;
-      icon = Icons.wifi_off;
+      context.showWarningSnackBar(
+        'لا يوجد اتصال بالإنترنت. سيتم حفظ البيانات محليًا.',
+      );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 20.w),
-            SizedBox(width: 12.w),
-            Expanded(child: Text(msg)),
-          ],
-        ),
-        backgroundColor: bgColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        duration: const Duration(seconds: 3),
-        margin: EdgeInsets.all(16.w),
-      ),
-    );
   }
 
   @override
@@ -344,6 +330,10 @@ class _BatchesScreenState extends State<BatchesScreen>
               onPressed: () {
                 Navigator.of(context).pop();
                 context.read<auth.AuthCubit>().logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -96,29 +97,15 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
 
         // إظهار رسالة نجاح
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('تم إضافة الدفعة بنجاح'),
-              backgroundColor: AppTheme.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
+          context.showSuccessSnackBar(
+            'تم إضافة الدفعة بنجاح!',
           );
           Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('حدث خطأ أثناء إضافة الدفعة'),
-              backgroundColor: AppTheme.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
+          context.showErrorSnackBar(
+            'حدث خطأ أثناء إضافة الدفعة: ${e.toString()}',
           );
         }
       } finally {
@@ -137,7 +124,10 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
       backgroundColor: AppTheme.scaffoldLight,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppTheme.textLight,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('إضافة دفعة جديدة'),
@@ -224,7 +214,6 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                   Row(
                     children: [
                       Expanded(
-                        flex: 2,
                         child: EnhancedTextField(
                           controller: _chickCountController,
                           label: 'العدد *',
@@ -242,19 +231,16 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                             if (count == null || count <= 0) {
                               return 'رقم غير صحيح';
                             }
-                            if (count > 100000) {
-                              return 'عدد كبير جداً';
-                            }
+
                             return null;
                           },
                         ),
                       ),
-                      SizedBox(width: 10.w),
+                      SizedBox(width: 5.w),
                       Expanded(
-                        flex: 3,
                         child: EnhancedTextField(
                           controller: _chickBuyPriceController,
-                          label: 'سعر الوحدة (جنيه) *',
+                          label: 'السعر *',
                           icon: Icons.attach_money,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -272,9 +258,6 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
                             final price = double.tryParse(value);
                             if (price == null || price <= 0) {
                               return 'سعر غير صحيح';
-                            }
-                            if (price > 1000) {
-                              return 'سعر مرتفع جداً';
                             }
                             return null;
                           },

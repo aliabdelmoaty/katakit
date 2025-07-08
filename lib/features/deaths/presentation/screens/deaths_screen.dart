@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/entities/death_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -60,54 +61,13 @@ class _DeathsScreenState extends State<DeathsScreen>
   void _setupSyncListener() {
     SyncService().userNoticeStream.listen((msg) {
       if (mounted && msg.isNotEmpty) {
-        _showCustomSnackBar(msg);
+        context.showSuccessSnackBar(
+          msg,
+        );
       }
     });
   }
 
-  void _showCustomSnackBar(String message) {
-    Color bgColor = AppTheme.info;
-    IconData icon = Icons.info_outline;
-
-    if (message.contains('خطأ') || message.contains('error')) {
-      bgColor = AppTheme.error;
-      icon = Icons.error_outline;
-    } else if (message.contains('تمت') ||
-        message.contains('اكتملت') ||
-        message.contains('نجاح')) {
-      bgColor = AppTheme.success;
-      icon = Icons.check_circle_outline;
-    } else if (message.contains('لا يوجد اتصال')) {
-      bgColor = AppTheme.warning;
-      icon = Icons.wifi_off;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 20.w),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: bgColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        margin: EdgeInsets.all(16.w),
-      ),
-    );
-  }
 
   int _calculateAvailableForDeaths(int totalSold, int totalDeaths) {
     return widget.batch.chickCount - totalSold - totalDeaths;

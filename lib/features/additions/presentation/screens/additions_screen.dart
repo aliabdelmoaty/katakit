@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/entities/addition_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -44,37 +45,20 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     _fabAnimationController.forward();
     SyncService().userNoticeStream.listen((msg) {
       if (mounted && msg.isNotEmpty) {
-        Color bgColor = Colors.blue;
-        IconData icon = Icons.info;
         if (msg.contains('خطأ') || msg.contains('error')) {
-          bgColor = AppTheme.error;
-          icon = Icons.error;
+          context.showErrorSnackBar(msg);
         } else if (msg.contains('تمت') ||
             msg.contains('اكتملت') ||
             msg.contains('نجاح')) {
-          bgColor = AppTheme.success;
-          icon = Icons.check_circle;
+          context.showSuccessSnackBar(msg);
+          return;
         } else if (msg.contains('لا يوجد اتصال')) {
-          bgColor = AppTheme.warning;
-          icon = Icons.wifi_off;
+          context.showWarningSnackBar(
+            'لا يوجد اتصال بالإنترنت. سيتم حفظ البيانات محليًا.',
+          );
+          return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(icon, color: Colors.white, size: 20.w),
-                SizedBox(width: 8.w),
-                Expanded(child: Text(msg)),
-              ],
-            ),
-            backgroundColor: bgColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            margin: EdgeInsets.all(16.w),
-          ),
-        );
+        context.showInfoSnackBar(msg);
       }
     });
   }

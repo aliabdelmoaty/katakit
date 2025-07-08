@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/auth_cubit.dart';
@@ -61,7 +62,7 @@ class _OtpScreenState extends State<OtpScreen>
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthError) {
-              _showCustomSnackBar(context, state.message, isError: true);
+            context.showErrorSnackBar(state.message);
             }
             if (state is OtpVerified) {
               Navigator.of(context).pushReplacement(
@@ -255,47 +256,4 @@ class _OtpScreenState extends State<OtpScreen>
     );
   }
 
-  void _showCustomSnackBar(
-    BuildContext context,
-    String message, {
-    bool isError = false,
-  }) {
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color:
-                  isError
-                      ? AppTheme.error.withOpacity(0.2)
-                      : AppTheme.success.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: isError ? AppTheme.error : AppTheme.success,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(fontSize: 14.sp, color: AppTheme.textLight),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor:
-          isError
-              ? AppTheme.error.withOpacity(0.9)
-              : AppTheme.success.withOpacity(0.9),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-      margin: EdgeInsets.all(16.w),
-      duration: const Duration(seconds: 4),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
 }

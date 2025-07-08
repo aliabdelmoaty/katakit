@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/entities/addition_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
@@ -116,22 +117,8 @@ class _AddAdditionScreenState extends State<AddAdditionScreen>
       context.read<AdditionsCubit>().addAddition(addition);
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20.w),
-              SizedBox(width: 8.w),
-              const Expanded(child: Text('تم إضافة المصروف بنجاح')),
-            ],
-          ),
-          backgroundColor: AppTheme.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          margin: EdgeInsets.all(16.w),
-        ),
+      context.showSuccessSnackBar(
+        'تم إضافة المصروف بنجاح',
       );
 
       Navigator.pop(context);

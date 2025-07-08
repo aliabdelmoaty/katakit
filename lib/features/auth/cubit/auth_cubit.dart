@@ -90,6 +90,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       dev.log('بدء تسجيل الخروج من Supabase', name: 'auth');
       final result = await authRepository.logout();
+      
       result.fold(
         (failure) {
           dev.log('خطأ في تسجيل الخروج من Supabase: $failure', name: 'auth');

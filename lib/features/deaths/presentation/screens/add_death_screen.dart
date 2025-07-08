@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/entities/death_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
@@ -112,22 +113,7 @@ class _AddDeathScreenState extends State<AddDeathScreen>
       context.read<DeathsCubit>().addDeath(death);
 
       // Show success message before navigation
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20.w),
-              SizedBox(width: 8.w),
-              Text('تم إضافة الوفيات بنجاح'),
-            ],
-          ),
-          backgroundColor: AppTheme.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-        ),
-      );
+      context.showSuccessSnackBar('تم إضافة الوفيات بنجاح');
 
       Navigator.pop(context);
     }
@@ -172,27 +158,10 @@ class _AddDeathScreenState extends State<AddDeathScreen>
                 setState(() {});
               }
               if (state is DeathsError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Colors.white,
-                          size: 20.w,
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(child: Text(state.message)),
-                      ],
-                    ),
-                    backgroundColor: AppTheme.error,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  ),
+                context.showErrorSnackBar(
+                  'حدث خطأ أثناء إضافة الوفيات: ${state.message}',
                 );
-              }
+              } 
             },
           ),
         ],

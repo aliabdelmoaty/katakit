@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:katakit/core/utils/app_utils.dart';
 import '../../../../core/entities/sale_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -51,11 +52,8 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
       final newPaidAmount = _currentPaidAmount + additionalPayment;
 
       if (newPaidAmount > widget.sale.totalPrice) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('المبلغ الإجمالي لا يمكن أن يتجاوز السعر الكلي'),
-            backgroundColor: AppTheme.error,
-          ),
+        context.showErrorSnackBar(
+          'المبلغ المدفوع لا يمكن أن يتجاوز إجمالي السعر (${widget.sale.totalPrice.toStringAsFixed(0)} ج)',
         );
         return;
       }
