@@ -71,6 +71,37 @@ class AuthRepository {
       name: user.userMetadata?['name'],
     );
   }
+
+  Future<Either<String, void>> sendOtpToEmail(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(email);
+      return Right(null);
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  Future<Either<String, void>> verifyOtp(String email, String otp) async {
+    try {
+      await _client.auth.verifyOTP(
+        type: OtpType.email,
+        email: email,
+        token: otp,
+      );
+      return Right(null);
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  Future<Either<String, void>> updatePassword(String newPassword) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      return Right(null);
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
 }
 
 // Either implementation (بدائية)

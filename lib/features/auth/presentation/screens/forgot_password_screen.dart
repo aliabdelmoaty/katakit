@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/enhanced_text_field.dart';
 import '../../cubit/auth_cubit.dart';
+import 'otp_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -48,7 +49,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthCubit>().forgotPassword(_emailController.text.trim());
+      context.read<AuthCubit>().sendOtpToEmail(_emailController.text.trim());
     }
   }
 
@@ -110,15 +111,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                         isError: true,
                       );
                     }
-                    if (state is Unauthenticated) {
-                      _showCustomSnackBar(
-                        context,
-                        'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
-                        isSuccess: true,
+                    if (state is OtpSent) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => OtpScreen(email: state.email),
+                        ),
                       );
-                      Future.delayed(const Duration(seconds: 2), () {
-                        Navigator.of(context).pop();
-                      });
                     }
                   },
                   builder: (context, state) {

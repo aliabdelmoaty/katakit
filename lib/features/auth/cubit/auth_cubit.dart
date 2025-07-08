@@ -31,6 +31,22 @@ class AuthError extends AuthState {
   List<Object?> get props => [message];
 }
 
+class OtpSent extends AuthState {
+  final String email;
+  OtpSent(this.email);
+  @override
+  List<Object?> get props => [email];
+}
+
+class OtpVerified extends AuthState {
+  final String email;
+  OtpVerified(this.email);
+  @override
+  List<Object?> get props => [email];
+}
+
+class PasswordResetSuccess extends AuthState {}
+
 // Cubit
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository authRepository;
@@ -90,5 +106,32 @@ class AuthCubit extends Cubit<AuthState> {
     } else {
       emit(Unauthenticated());
     }
+  }
+
+  Future<void> sendOtpToEmail(String email) async {
+    emit(AuthLoading());
+    final result = await authRepository.sendOtpToEmail(email);
+    result.fold(
+      (failure) => emit(AuthError(failure)),
+      (_) => emit(OtpSent(email)),
+    );
+  }
+
+  Future<void> verifyOtp(String email, String otp) async {
+    emit(AuthLoading());
+    final result = await authRepository.verifyOtp(email, otp);
+    result.fold(
+      (failure) => emit(AuthError(failure)),
+      (_) => emit(OtpVerified(email)),
+    );
+  }
+
+  Future<void> resetPassword(String newPassword) async {
+    emit(AuthLoading());
+    final result = await authRepository.updatePassword(newPassword);
+    result.fold(
+      (failure) => emit(AuthError(failure)),
+      (_) => emit(PasswordResetSuccess()),
+    );
   }
 }
