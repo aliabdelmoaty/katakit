@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/auth_error_messages.dart';
 
 class UserModel {
   final String id;
@@ -17,7 +18,7 @@ class AuthRepository {
         password: password,
       );
       final user = response.user;
-      if (user == null) return Left('لم يتم العثور على المستخدم');
+      if (user == null) return Left('user_not_found');
       return Right(
         UserModel(
           id: user.id,
@@ -26,6 +27,17 @@ class AuthRepository {
         ),
       );
     } catch (e) {
+      // Try to extract code from SupabaseException
+      if (e is AuthException && e.statusCode != null) {
+        return Left(e.statusCode!);
+      } else if (e is AuthException) {
+        // Try to parse code from message
+        final match = RegExp(r'code: (\w+)').firstMatch(e.message);
+        if (match != null) {
+          return Left(match.group(1)!);
+        }
+      }
+      // fallback: try to parse error string
       return Left(e.toString());
     }
   }
@@ -42,9 +54,23 @@ class AuthRepository {
         data: {'name': name},
       );
       final user = response.user;
-      if (user == null) return Left('لم يتم إنشاء المستخدم');
-      return Right(UserModel(id: user.id, email: user.email, name: name));
+      if (user == null) return Left('user_not_found');
+      return Right(
+        UserModel(
+          id: user.id,
+          email: user.email,
+          name: user.userMetadata?['name'],
+        ),
+      );
     } catch (e) {
+      if (e is AuthException && e.statusCode != null) {
+        return Left(e.statusCode!);
+      } else if (e is AuthException) {
+        final match = RegExp(r'code: (\w+)').firstMatch(e.message);
+        if (match != null) {
+          return Left(match.group(1)!);
+        }
+      }
       return Left(e.toString());
     }
   }
@@ -64,6 +90,14 @@ class AuthRepository {
       await _client.auth.resetPasswordForEmail(email);
       return Right(null);
     } catch (e) {
+      if (e is AuthException && e.statusCode != null) {
+        return Left(e.statusCode!);
+      } else if (e is AuthException) {
+        final match = RegExp(r'code: (\w+)').firstMatch(e.message);
+        if (match != null) {
+          return Left(match.group(1)!);
+        }
+      }
       return Left(e.toString());
     }
   }

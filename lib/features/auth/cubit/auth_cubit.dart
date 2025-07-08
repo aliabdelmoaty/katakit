@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../repository/auth_repository.dart';
 import 'package:hive/hive.dart';
 import 'dart:developer' as dev;
+import '../../../core/utils/auth_error_messages.dart';
 
 // States
 abstract class AuthState extends Equatable {
@@ -60,7 +61,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(AuthLoading());
     final result = await authRepository.login(email, password);
-    result.fold((failure) => emit(AuthError(failure)), (user) {
+    result.fold((failure) => emit(AuthError(getSupabaseAuthErrorMessageAr(failure))), (user) {
       emit(Authenticated(userId: user.id, email: user.email, name: user.name));
       if (onLoginSuccess != null) onLoginSuccess(user.id);
     });
@@ -74,7 +75,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(AuthLoading());
     final result = await authRepository.register(email, password, name);
-    result.fold((failure) => emit(AuthError(failure)), (user) {
+    result.fold((failure) => emit(AuthError(getSupabaseAuthErrorMessageAr(failure))), (user) {
       emit(Authenticated(userId: user.id, email: user.email, name: user.name));
       if (onRegisterSuccess != null) onRegisterSuccess(user.id);
     });
@@ -146,7 +147,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     final result = await authRepository.forgotPassword(email);
     result.fold(
-      (failure) => emit(AuthError(failure)),
+      (failure) => emit(AuthError(getSupabaseAuthErrorMessageAr(failure))),
       (_) => emit(Unauthenticated()),
     );
   }
