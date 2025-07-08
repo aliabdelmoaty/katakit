@@ -148,17 +148,12 @@ class _AddDeathScreenState extends State<AddDeathScreen>
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20.w),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20.w,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),

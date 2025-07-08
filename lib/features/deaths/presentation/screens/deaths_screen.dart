@@ -10,6 +10,7 @@ import '../../../sales/cubit/sales_cubit.dart';
 import 'add_death_screen.dart';
 import '../../../../core/services/sync_service.dart';
 import 'widgets/build_summary_header.dart';
+import '../../../auth/cubit/auth_cubit.dart' as auth;
 
 class DeathsScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -25,6 +26,7 @@ class _DeathsScreenState extends State<DeathsScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool _didInitialLoad = false;
 
   @override
   void initState() {
@@ -36,13 +38,23 @@ class _DeathsScreenState extends State<DeathsScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-
-    context.read<DeathsCubit>().loadDeaths(widget.batch.id);
-    context.read<SalesCubit>().loadSales(widget.batch.id);
-
     _animationController.forward();
-
     _setupSyncListener();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitialLoad) {
+      final authState = context.read<auth.AuthCubit>().state;
+      if (authState is auth.Authenticated) {
+        context.read<DeathsCubit>().loadDeathsInitialIfNeeded(
+          widget.batch.id,
+          authState.userId,
+        );
+        _didInitialLoad = true;
+      }
+    }
   }
 
   void _setupSyncListener() {
@@ -118,6 +130,10 @@ class _DeathsScreenState extends State<DeathsScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       title: Text(
         'وفيات ${widget.batch.name}',
         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -129,15 +145,6 @@ class _DeathsScreenState extends State<DeathsScreen>
       foregroundColor: AppTheme.textLight,
       elevation: 0,
       centerTitle: true,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.8)],
-          ),
-        ),
-      ),
       bottom: _buildSyncStatusBar(),
     );
   }
@@ -232,43 +239,59 @@ class _DeathsScreenState extends State<DeathsScreen>
   }
 
   Widget _buildBody() {
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<DeathsCubit, DeathsState>(
-          listener: (context, state) {
-            if (state is DeathsLoaded) {
-              setState(() {});
-            }
-          },
-        ),
-        BlocListener<SalesCubit, SalesState>(
-          listener: (context, state) {
-            if (state is SalesLoaded) {
-              setState(() {});
-            }
-          },
-        ),
-      ],
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: BlocBuilder<DeathsCubit, DeathsState>(
-          builder: (context, deathsState) {
-            return BlocBuilder<SalesCubit, SalesState>(
-              builder: (context, salesState) {
-                if (deathsState is DeathsLoading ||
-                    salesState is SalesLoading) {
-                  return _buildLoadingState();
-                } else if (deathsState is DeathsLoaded) {
-                  return _buildLoadedState(deathsState, salesState);
-                } else if (deathsState is DeathsError) {
-                  return _buildErrorState(deathsState);
+    return BlocBuilder<DeathsCubit, DeathsState>(
+      builder: (context, state) {
+        if (state is DeathsInitialLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppTheme.primary),
+                SizedBox(height: 16),
+                Text('جاري تحميل بياناتك من السحابة...'),
+              ],
+            ),
+          );
+        }
+        return MultiBlocListener(
+          listeners: [
+            BlocListener<DeathsCubit, DeathsState>(
+              listener: (context, state) {
+                if (state is DeathsLoaded) {
+                  setState(() {});
                 }
-                return const SizedBox.shrink();
               },
-            );
-          },
-        ),
-      ),
+            ),
+            BlocListener<SalesCubit, SalesState>(
+              listener: (context, state) {
+                if (state is SalesLoaded) {
+                  setState(() {});
+                }
+              },
+            ),
+          ],
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: BlocBuilder<DeathsCubit, DeathsState>(
+              builder: (context, deathsState) {
+                return BlocBuilder<SalesCubit, SalesState>(
+                  builder: (context, salesState) {
+                    if (deathsState is DeathsLoading ||
+                        salesState is SalesLoading) {
+                      return _buildLoadingState();
+                    } else if (deathsState is DeathsLoaded) {
+                      return _buildLoadedState(deathsState, salesState);
+                    } else if (deathsState is DeathsError) {
+                      return _buildErrorState(deathsState);
+                    }
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

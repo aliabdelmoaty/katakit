@@ -36,26 +36,31 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository authRepository;
   AuthCubit({required this.authRepository}) : super(AuthInitial());
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+    String email,
+    String password, {
+    void Function(String userId)? onLoginSuccess,
+  }) async {
     emit(AuthLoading());
     final result = await authRepository.login(email, password);
-    result.fold(
-      (failure) => emit(AuthError(failure)),
-      (user) => emit(
-        Authenticated(userId: user.id, email: user.email, name: user.name),
-      ),
-    );
+    result.fold((failure) => emit(AuthError(failure)), (user) {
+      emit(Authenticated(userId: user.id, email: user.email, name: user.name));
+      if (onLoginSuccess != null) onLoginSuccess(user.id);
+    });
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register(
+    String email,
+    String password,
+    String name, {
+    void Function(String userId)? onRegisterSuccess,
+  }) async {
     emit(AuthLoading());
     final result = await authRepository.register(email, password, name);
-    result.fold(
-      (failure) => emit(AuthError(failure)),
-      (user) => emit(
-        Authenticated(userId: user.id, email: user.email, name: user.name),
-      ),
-    );
+    result.fold((failure) => emit(AuthError(failure)), (user) {
+      emit(Authenticated(userId: user.id, email: user.email, name: user.name));
+      if (onRegisterSuccess != null) onRegisterSuccess(user.id);
+    });
   }
 
   Future<void> logout() async {

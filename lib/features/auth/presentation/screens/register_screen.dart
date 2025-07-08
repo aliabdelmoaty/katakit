@@ -99,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           child: IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(
-              Icons.arrow_back_ios_rounded,
+              Icons.arrow_back_ios_new_rounded,
               color: AppTheme.textMain,
               size: 20.w,
             ),

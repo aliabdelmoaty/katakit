@@ -343,60 +343,25 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return SliverAppBar(
       floating: false,
       pinned: true,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppTheme.primaryGradient,
+      title: Text(
+        'إحصائيات ${widget.batch.name}',
+        style: TextStyle(
+          fontSize: 18.sp,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textLight,
+          shadows: [
+            Shadow(
+              offset: const Offset(0, 1),
+              blurRadius: 3,
+              color: Colors.black.withOpacity(0.3),
             ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 20.h,
-                right: 20.w,
-                child: Container(
-                  width: 80.w,
-                  height: 80.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 30.h,
-                left: 30.w,
-                child: Container(
-                  width: 60.w,
-                  height: 60.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(15.r),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
-        title: Text(
-          'إحصائيات ${widget.batch.name}',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textLight,
-            shadows: [
-              Shadow(
-                offset: const Offset(0, 1),
-                blurRadius: 3,
-                color: Colors.black.withOpacity(0.3),
-              ),
-            ],
-          ),
-        ),
-        centerTitle: true,
+      ),
+      centerTitle: true,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+        onPressed: () => Navigator.of(context).pop(),
       ),
       backgroundColor: AppTheme.primary,
       actions: [
@@ -435,6 +400,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
   AppBar _buildAppBar() {
     return AppBar(
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       title: Text('إحصائيات ${widget.batch.name}'),
       backgroundColor: AppTheme.primary,
       actions: [

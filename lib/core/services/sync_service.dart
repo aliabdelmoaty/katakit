@@ -515,4 +515,32 @@ class SyncService {
     _statusController.close();
     _userNoticeController.close();
   }
+
+  /// دالة عامة لتحميل البيانات الأولية بعد تسجيل الدخول
+  Future<void> downloadInitialDataForUser(String userId) async {
+    try {
+      // Check and download batches
+      final batchBox = await Hive.openBox<BatchEntity>('batches');
+      if (batchBox.isEmpty) {
+        await _downloadAndSaveData('batches', batchBox, userId);
+      }
+      // Check and download additions
+      final additionsBox = await Hive.openBox<AdditionEntity>('additions');
+      if (additionsBox.isEmpty) {
+        await _downloadAndSaveData('additions', additionsBox, userId);
+      }
+      // Check and download deaths
+      final deathsBox = await Hive.openBox<DeathEntity>('deaths');
+      if (deathsBox.isEmpty) {
+        await _downloadAndSaveData('deaths', deathsBox, userId);
+      }
+      // Check and download sales
+      final salesBox = await Hive.openBox<SaleEntity>('sales');
+      if (salesBox.isEmpty) {
+        await _downloadAndSaveData('sales', salesBox, userId);
+      }
+    } catch (e) {
+      // ignore errors here, handled in Cubit
+    }
+  }
 }

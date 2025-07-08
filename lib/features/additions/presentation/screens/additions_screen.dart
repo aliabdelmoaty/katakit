@@ -8,6 +8,7 @@ import '../../cubit/additions_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
 import 'add_addition_screen.dart';
 import '../../../../core/services/sync_service.dart';
+import '../../../auth/cubit/auth_cubit.dart' as auth;
 
 class AdditionsScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -27,6 +28,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     with TickerProviderStateMixin {
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
+  bool _didInitialLoad = false;
 
   @override
   void initState() {
@@ -39,16 +41,11 @@ class _AdditionsScreenState extends State<AdditionsScreen>
       parent: _fabAnimationController,
       curve: Curves.easeInOut,
     );
-
-    context.read<AdditionsCubit>().loadAdditions(widget.batch.id);
-    context.read<DeathsCubit>().loadDeaths(widget.batch.id);
     _fabAnimationController.forward();
-
     SyncService().userNoticeStream.listen((msg) {
       if (mounted && msg.isNotEmpty) {
         Color bgColor = Colors.blue;
         IconData icon = Icons.info;
-
         if (msg.contains('خطأ') || msg.contains('error')) {
           bgColor = AppTheme.error;
           icon = Icons.error;
@@ -61,7 +58,6 @@ class _AdditionsScreenState extends State<AdditionsScreen>
           bgColor = AppTheme.warning;
           icon = Icons.wifi_off;
         }
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -84,12 +80,27 @@ class _AdditionsScreenState extends State<AdditionsScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitialLoad) {
+      final authState = context.read<auth.AuthCubit>().state;
+      if (authState is auth.Authenticated) {
+        context.read<AdditionsCubit>().loadAdditionsInitialIfNeeded(
+          widget.batch.id,
+          authState.userId,
+        );
+        _didInitialLoad = true;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _fabAnimationController.dispose();
     super.dispose();
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
@@ -98,7 +109,20 @@ class _AdditionsScreenState extends State<AdditionsScreen>
           SliverToBoxAdapter(child: SizedBox(height: 8.h)),
           BlocBuilder<AdditionsCubit, AdditionsState>(
             builder: (context, additionsState) {
-              if (additionsState is AdditionsLoading) {
+              if (additionsState is AdditionsInitialLoading) {
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: AppTheme.primary),
+                        SizedBox(height: 16),
+                        Text('جاري تحميل بياناتك من السحابة...'),
+                      ],
+                    ),
+                  ),
+                );
+              } else if (additionsState is AdditionsLoading) {
                 return SliverFillRemaining(child: _buildLoadingState());
               } else if (additionsState is AdditionsLoaded) {
                 // استخدام BlocBuilder للحصول على بيانات الوفيات
@@ -177,6 +201,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
       ),
     );
   }
+
   Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 180.h,
@@ -195,24 +220,6 @@ class _AdditionsScreenState extends State<AdditionsScreen>
           ),
           child: Stack(
             children: [
-              // Background pattern
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: const AssetImage('assets/images/pattern.png'),
-                        repeat: ImageRepeat.repeat,
-                        opacity: 0.1,
-                      ),
-                      borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(24.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
               // Content
               Positioned(
                 bottom: 20.h,
@@ -374,7 +381,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     );
   }
 
- Widget _buildEnhancedSummaryCard(double totalCost, int totalDeaths) {
+  Widget _buildEnhancedSummaryCard(double totalCost, int totalDeaths) {
     final actualCostPerChick = _calculateActualCostPerChickWithDeaths(
       totalCost,
       totalDeaths,
@@ -501,6 +508,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
       ),
     );
   }
+
   Widget _buildSummaryItem(
     String title,
     String value,
@@ -794,7 +802,7 @@ class _AdditionsScreenState extends State<AdditionsScreen>
     );
   }
 
-     double _calculateActualCostPerChickWithDeaths(
+  double _calculateActualCostPerChickWithDeaths(
     double totalAdditionsCost,
     int totalDeaths,
   ) {

@@ -170,6 +170,10 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
       backgroundColor: AppTheme.primary,
       foregroundColor: AppTheme.textLight,
       elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           widget.batch.name,

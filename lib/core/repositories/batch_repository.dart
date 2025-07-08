@@ -1,5 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../entities/batch_entity.dart';
+import '../entities/addition_entity.dart';
+import '../entities/death_entity.dart';
+import '../entities/sale_entity.dart';
 import '../services/sync_service.dart';
 import '../services/sync_queue.dart';
 import '../services/connection_service.dart';
@@ -81,6 +84,65 @@ class BatchRepository implements IBatchRepository {
         );
       }
     }
+
+    // --- Cascade Delete for related entities ---
+    // Delete Additions
+    final additionsBox = await Hive.openBox<AdditionEntity>('additions');
+    final additionsToDelete = additionsBox.values.where((a) => a.batchId == id).toList();
+    for (final addition in additionsToDelete) {
+      final additionIndex = additionsBox.values.toList().indexWhere((a) => a.id == addition.id);
+      if (additionIndex != -1) {
+        await additionsBox.deleteAt(additionIndex);
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: addition.id,
+            type: 'delete',
+            entityType: 'addition',
+            data: {'id': addition.id},
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+
+    // Delete Deaths
+    final deathsBox = await Hive.openBox<DeathEntity>('deaths');
+    final deathsToDelete = deathsBox.values.where((d) => d.batchId == id).toList();
+    for (final death in deathsToDelete) {
+      final deathIndex = deathsBox.values.toList().indexWhere((d) => d.id == death.id);
+      if (deathIndex != -1) {
+        await deathsBox.deleteAt(deathIndex);
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: death.id,
+            type: 'delete',
+            entityType: 'death',
+            data: {'id': death.id},
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+
+    // Delete Sales
+    final salesBox = await Hive.openBox<SaleEntity>('sales');
+    final salesToDelete = salesBox.values.where((s) => s.batchId == id).toList();
+    for (final sale in salesToDelete) {
+      final saleIndex = salesBox.values.toList().indexWhere((s) => s.id == sale.id);
+      if (saleIndex != -1) {
+        await salesBox.deleteAt(saleIndex);
+        await SyncService().queueChange(
+          SyncQueueItem(
+            id: sale.id,
+            type: 'delete',
+            entityType: 'sale',
+            data: {'id': sale.id},
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+    // --- End Cascade Delete ---
   }
 
   Map<String, dynamic> batchToMap(BatchEntity b) => {

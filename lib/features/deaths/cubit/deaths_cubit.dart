@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../core/entities/death_entity.dart';
 import '../../../core/usecases/death_usecases.dart';
+import 'package:hive/hive.dart';
+import '../../../core/services/sync_service.dart';
 
 // Events
 abstract class DeathsEvent extends Equatable {
@@ -75,6 +77,8 @@ class DeathsError extends DeathsState {
   List<Object?> get props => [message];
 }
 
+class DeathsInitialLoading extends DeathsState {}
+
 // Cubit
 class DeathsCubit extends Cubit<DeathsState> {
   final GetDeathsUseCase getDeathsUseCase;
@@ -127,5 +131,16 @@ class DeathsCubit extends Cubit<DeathsState> {
     } catch (e) {
       emit(DeathsError(e.toString()));
     }
+  }
+
+  /// تحميل أولي بعد تسجيل الدخول: إذا كان Hive فارغًا، جلب من Supabase
+  Future<void> loadDeathsInitialIfNeeded(String batchId, String userId) async {
+    emit(DeathsInitialLoading());
+    final box = await Hive.openBox<DeathEntity>('deaths');
+    final hasForBatch = box.values.any((d) => d.batchId == batchId);
+    if (!hasForBatch) {
+      await SyncService().downloadInitialDataForUser(userId);
+    }
+    await loadDeaths(batchId);
   }
 }

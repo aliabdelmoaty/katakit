@@ -71,6 +71,13 @@ class _EditSaleScreenState extends State<EditSaleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppTheme.textLight,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'تعديل عملية البيع',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(

@@ -136,6 +136,10 @@ class _AddBatchScreenState extends State<AddBatchScreen> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldLight,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textLight),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('إضافة دفعة جديدة'),
         backgroundColor: AppTheme.primary,
         foregroundColor: AppTheme.textLight,

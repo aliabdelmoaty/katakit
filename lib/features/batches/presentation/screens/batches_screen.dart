@@ -26,13 +26,12 @@ class _BatchesScreenState extends State<BatchesScreen>
   late AnimationController _fabAnimationController;
   late AnimationController _cardsAnimationController;
   late Animation<double> _fabAnimation;
+  bool _didInitialLoad = false;
 
   @override
   void initState() {
     super.initState();
-    context.read<BatchesCubit>().loadBatches();
-
-    // Initialize animations
+    // لا تحمل الدفعات هنا، سيتم التحميل بعد تسجيل الدخول
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -41,23 +40,33 @@ class _BatchesScreenState extends State<BatchesScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _fabAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _fabAnimationController,
         curve: Curves.elasticOut,
       ),
     );
-
     _fabAnimationController.forward();
     _cardsAnimationController.forward();
-
-    // Sync service listener
     SyncService().userNoticeStream.listen((msg) {
       if (mounted && msg.isNotEmpty) {
         _showSyncNotification(msg);
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitialLoad) {
+      final authState = context.read<auth.AuthCubit>().state;
+      if (authState is auth.Authenticated) {
+        context.read<BatchesCubit>().loadBatchesInitialIfNeeded(
+          authState.userId,
+        );
+        _didInitialLoad = true;
+      }
+    }
   }
 
   void _showSyncNotification(String msg) {
@@ -408,7 +417,18 @@ class _BatchesScreenState extends State<BatchesScreen>
           Expanded(
             child: BlocBuilder<BatchesCubit, BatchesState>(
               builder: (context, state) {
-                if (state is BatchesLoading) {
+                if (state is BatchesInitialLoading) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: AppTheme.primary),
+                        SizedBox(height: 16),
+                        Text('جاري تحميل بياناتك من السحابة...'),
+                      ],
+                    ),
+                  );
+                } else if (state is BatchesLoading) {
                   return _buildLoadingState();
                 } else if (state is BatchesLoaded) {
                   return _buildLoadedState(state);

@@ -8,8 +8,6 @@ flutter_native_splash:
   # Branding
   branding: assets/images/logo.png
   
-  # Background color for dark mode - لون الخلفية للوضع المظلم
-  color_dark: "#121212"
   
   # Fullscreen mode
   fullscreen: true

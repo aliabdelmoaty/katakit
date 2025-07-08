@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../core/entities/sale_entity.dart';
 import '../../../core/usecases/sale_usecases.dart';
+import 'package:hive/hive.dart';
+import '../../../core/services/sync_service.dart';
 
 // Events
 abstract class SalesEvent extends Equatable {
@@ -76,6 +78,8 @@ class SalesError extends SalesState {
   List<Object?> get props => [message];
 }
 
+class SalesInitialLoading extends SalesState {}
+
 // Cubit
 class SalesCubit extends Cubit<SalesState> {
   final GetSalesUseCase getSalesUseCase;
@@ -131,5 +135,16 @@ class SalesCubit extends Cubit<SalesState> {
     } catch (e) {
       emit(SalesError(e.toString()));
     }
+  }
+
+  /// تحميل أولي بعد تسجيل الدخول: إذا كان Hive فارغًا، جلب من Supabase
+  Future<void> loadSalesInitialIfNeeded(String batchId, String userId) async {
+    emit(SalesInitialLoading());
+    final box = await Hive.openBox<SaleEntity>('sales');
+    final hasForBatch = box.values.any((s) => s.batchId == batchId);
+    if (!hasForBatch) {
+      await SyncService().downloadInitialDataForUser(userId);
+    }
+    await loadSales(batchId);
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:katakit/features/sales/presentation/screens/sale_card.dart' show SaleCard;
+import 'package:katakit/features/sales/presentation/screens/sale_card.dart'
+    show SaleCard;
 import '../../../../core/entities/sale_entity.dart';
 import '../../../../core/entities/batch_entity.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -10,6 +11,7 @@ import '../../cubit/sales_cubit.dart';
 import '../../../deaths/cubit/deaths_cubit.dart';
 import 'add_sale_screen.dart';
 import '../../../../core/services/sync_service.dart';
+import '../../../auth/cubit/auth_cubit.dart' as auth;
 
 class SalesScreen extends StatefulWidget {
   final BatchEntity batch;
@@ -28,6 +30,7 @@ class _SalesScreenState extends State<SalesScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   bool _isKeyboardVisible = false;
+  bool _didInitialLoad = false;
 
   @override
   void initState() {
@@ -39,10 +42,22 @@ class _SalesScreenState extends State<SalesScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-
-    context.read<SalesCubit>().loadSales(widget.batch.id);
-    context.read<DeathsCubit>().loadDeaths(widget.batch.id);
     _animationController.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitialLoad) {
+      final authState = context.read<auth.AuthCubit>().state;
+      if (authState is auth.Authenticated) {
+        context.read<SalesCubit>().loadSalesInitialIfNeeded(
+          widget.batch.id,
+          authState.userId,
+        );
+        _didInitialLoad = true;
+      }
+    }
   }
 
   @override
@@ -78,6 +93,13 @@ class _SalesScreenState extends State<SalesScreen>
       backgroundColor: AppTheme.scaffoldLight,
       resizeToAvoidBottomInset: true, // Allow resizing when keyboard appears
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppTheme.textLight,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'مبيعات ${widget.batch.name}',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -89,15 +111,6 @@ class _SalesScreenState extends State<SalesScreen>
         foregroundColor: AppTheme.textLight,
         elevation: 0,
         centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.8)],
-            ),
-          ),
-        ),
       ),
       body: MultiBlocListener(
         listeners: [
@@ -118,6 +131,18 @@ class _SalesScreenState extends State<SalesScreen>
         ],
         child: BlocBuilder<SalesCubit, SalesState>(
           builder: (context, salesState) {
+            if (salesState is SalesInitialLoading) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: AppTheme.primary),
+                    SizedBox(height: 16),
+                    Text('جاري تحميل بياناتك من السحابة...'),
+                  ],
+                ),
+              );
+            }
             return BlocBuilder<DeathsCubit, DeathsState>(
               builder: (context, deathsState) {
                 if (salesState is SalesLoading ||
@@ -256,7 +281,6 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
-  // ...existing code... (keep all other methods unchanged)
   Widget _buildLoadingState() {
     return Container(
       decoration: BoxDecoration(
@@ -496,7 +520,6 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 
-  // ...existing methods remain the same...
   Widget _buildModernInfoItem(
     String label,
     String value,
@@ -864,4 +887,3 @@ class _SalesScreenState extends State<SalesScreen>
     );
   }
 }
-

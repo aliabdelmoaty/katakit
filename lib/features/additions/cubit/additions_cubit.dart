@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../core/entities/addition_entity.dart';
 import '../../../core/usecases/addition_usecases.dart';
+import 'package:hive/hive.dart';
+import '../../../core/services/sync_service.dart';
 
 // Events
 abstract class AdditionsEvent extends Equatable {
@@ -75,6 +77,8 @@ class AdditionsError extends AdditionsState {
   List<Object?> get props => [message];
 }
 
+class AdditionsInitialLoading extends AdditionsState {}
+
 // Cubit
 class AdditionsCubit extends Cubit<AdditionsState> {
   final GetAdditionsUseCase getAdditionsUseCase;
@@ -127,5 +131,19 @@ class AdditionsCubit extends Cubit<AdditionsState> {
     } catch (e) {
       emit(AdditionsError(e.toString()));
     }
+  }
+
+  /// تحميل أولي بعد تسجيل الدخول: إذا كان Hive فارغًا، جلب من Supabase
+  Future<void> loadAdditionsInitialIfNeeded(
+    String batchId,
+    String userId,
+  ) async {
+    emit(AdditionsInitialLoading());
+    final box = await Hive.openBox<AdditionEntity>('additions');
+    final hasForBatch = box.values.any((a) => a.batchId == batchId);
+    if (!hasForBatch) {
+      await SyncService().downloadInitialDataForUser(userId);
+    }
+    await loadAdditions(batchId);
   }
 }

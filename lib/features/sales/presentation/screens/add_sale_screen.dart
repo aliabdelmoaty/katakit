@@ -136,6 +136,13 @@ class _AddSaleScreenState extends State<AddSaleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppTheme.textLight,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'إضافة عملية بيع جديدة',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(

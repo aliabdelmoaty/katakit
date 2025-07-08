@@ -192,24 +192,6 @@ class _AddAdditionScreenState extends State<AddAdditionScreen>
           ),
           child: Stack(
             children: [
-              // Background pattern
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/pattern.png'),
-                        repeat: ImageRepeat.repeat,
-                        opacity: 0.1,
-                      ),
-                      borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(24.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
               // Content
               Positioned(
                 bottom: 20.h,
@@ -262,17 +244,10 @@ class _AddAdditionScreenState extends State<AddAdditionScreen>
       ),
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
-        icon: Container(
-          padding: EdgeInsets.all(8.w),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios_rounded,
-            color: AppTheme.textLight,
-            size: 18.w,
-          ),
+        icon: Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: AppTheme.textLight,
+          size: 18.w,
         ),
       ),
     );

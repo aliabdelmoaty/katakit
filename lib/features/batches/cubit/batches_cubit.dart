@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../core/entities/batch_entity.dart';
 import '../../../core/usecases/batch_usecases.dart';
+import 'package:hive/hive.dart';
+import '../../../core/services/sync_service.dart';
 
 // Events
 abstract class BatchesEvent extends Equatable {
@@ -66,6 +68,8 @@ class BatchesError extends BatchesState {
   List<Object?> get props => [message];
 }
 
+class BatchesInitialLoading extends BatchesState {}
+
 // Cubit
 class BatchesCubit extends Cubit<BatchesState> {
   final GetBatchesUseCase getBatchesUseCase;
@@ -88,6 +92,18 @@ class BatchesCubit extends Cubit<BatchesState> {
     } catch (e) {
       emit(BatchesError(e.toString()));
     }
+  }
+
+  /// تحميل أولي بعد تسجيل الدخول: إذا كان Hive فارغًا، جلب من Supabase
+  Future<void> loadBatchesInitialIfNeeded(String userId) async {
+    emit(BatchesInitialLoading());
+    final box = await Hive.openBox<BatchEntity>('batches');
+    if (box.isEmpty) {
+      // جلب من Supabase وحفظ في Hive
+      await SyncService().downloadInitialDataForUser(userId);
+    }
+    // بعد التحميل أو إذا كان هناك بيانات بالفعل
+    await loadBatches();
   }
 
   Future<void> addBatch(BatchEntity batch) async {
