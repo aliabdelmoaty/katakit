@@ -49,8 +49,14 @@ class AuthRepository {
     }
   }
 
-  Future<void> logout() async {
-    await _client.auth.signOut();
+  Future<Either<String, void>> logout() async {
+    try {
+      // Sign out with global scope to ensure complete logout from all sessions
+      await _client.auth.signOut(scope: SignOutScope.global);
+      return Right(null);
+    } catch (e) {
+      return Left('خطأ في تسجيل الخروج: ${e.toString()}');
+    }
   }
 
   Future<Either<String, void>> forgotPassword(String email) async {

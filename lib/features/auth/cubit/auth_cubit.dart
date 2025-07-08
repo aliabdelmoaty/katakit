@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../repository/auth_repository.dart';
 import 'package:hive/hive.dart';
+import 'dart:developer' as dev;
 
 // States
 abstract class AuthState extends Equatable {
@@ -80,14 +81,64 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
-    await authRepository.logout();
-    await Future.wait([
-      Hive.deleteBoxFromDisk('batches'),
-      Hive.deleteBoxFromDisk('additions'),
-      Hive.deleteBoxFromDisk('deaths'),
-      Hive.deleteBoxFromDisk('sales'),
-    ]);
-    emit(Unauthenticated());
+    emit(AuthLoading());
+    try {
+      dev.log('بدء عملية تسجيل الخروج ومسح البيانات المحلية', name: 'auth');
+
+      // First clear all local data before signing out from Supabase
+      await _clearAllLocalData();
+
+      dev.log('بدء تسجيل الخروج من Supabase', name: 'auth');
+      final result = await authRepository.logout();
+      result.fold(
+        (failure) {
+          dev.log('خطأ في تسجيل الخروج من Supabase: $failure', name: 'auth');
+          emit(AuthError(failure));
+          return;
+        },
+        (_) async {
+          dev.log('تم تسجيل الخروج من Supabase بنجاح', name: 'auth');
+          emit(Unauthenticated());
+        },
+      );
+    } catch (e) {
+      dev.log('خطأ عام في عملية تسجيل الخروج: $e', name: 'auth');
+      emit(AuthError('حدث خطأ أثناء تسجيل الخروج: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _clearAllLocalData() async {
+    try {
+      // Close all boxes first to ensure they're not in use
+      final List<String> boxNames = [
+        'batches',
+        'additions',
+        'deaths',
+        'sales',
+        'sync_queue',
+      ];
+
+      // Close all open boxes
+      for (String boxName in boxNames) {
+        if (Hive.isBoxOpen(boxName)) {
+          await Hive.box(boxName).close();
+        }
+      }
+
+      // Delete all boxes from disk
+      await Future.wait([
+        Hive.deleteBoxFromDisk('batches'),
+        Hive.deleteBoxFromDisk('additions'),
+        Hive.deleteBoxFromDisk('deaths'),
+        Hive.deleteBoxFromDisk('sales'),
+        Hive.deleteBoxFromDisk('sync_queue'),
+      ]);
+
+      dev.log('تم مسح جميع البيانات المحلية بنجاح', name: 'auth');
+    } catch (e) {
+      dev.log('خطأ في مسح البيانات المحلية: $e', name: 'auth');
+      // Continue with logout even if data clearing fails
+    }
   }
 
   Future<void> forgotPassword(String email) async {

@@ -8,6 +8,7 @@ import '../../cubit/batches_cubit.dart';
 import 'add_batch_screen.dart';
 import 'batch_details_screen.dart';
 import '../../../../core/services/sync_service.dart';
+import '../../../../core/services/sync_queue.dart';
 import 'package:katakit/features/auth/cubit/auth_cubit.dart' as auth;
 
 class BatchesScreen extends StatefulWidget {
@@ -239,6 +240,131 @@ class _BatchesScreenState extends State<BatchesScreen>
     );
   }
 
+  void _showLogoutDialog(BuildContext context) async {
+    // Check if there are unsynchronized items
+    final queueService = SyncQueueService();
+    final pendingItems = await queueService.getQueue();
+    final hasPendingSync = pendingItems.isNotEmpty;
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.cardLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.logout, color: AppTheme.error, size: 24.w),
+              SizedBox(width: 12.w),
+              Text(
+                'تسجيل الخروج',
+                style: TextStyle(
+                  color: AppTheme.textMain,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'هل أنت متأكد من تسجيل الخروج؟',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              if (hasPendingSync) ...[
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: AppTheme.warning.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: AppTheme.warning, size: 20.sp),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          'لديك ${pendingItems.length} عنصر غير مزامن',
+                          style: TextStyle(
+                            color: AppTheme.warning,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12.h),
+              ],
+              Text(
+                'سيتم حذف جميع البيانات المحلية:\n• الدفعات والإضافات\n• الوفيات والمبيعات\n• طابور المزامنة\n• جميع البيانات المؤقتة',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13.sp,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+              child: Text(
+                'إلغاء',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.sp,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<auth.AuthCubit>().logout();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.error,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                elevation: 2,
+              ),
+              child: Text(
+                'تسجيل الخروج',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -280,18 +406,46 @@ class _BatchesScreenState extends State<BatchesScreen>
           ),
           Container(
             margin: EdgeInsets.only(right: 8.w),
-            child: IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: const Icon(Icons.logout, size: 18),
-              ),
-              tooltip: 'تسجيل الخروج',
-              onPressed: () {
-                context.read<auth.AuthCubit>().logout();
+            child: BlocConsumer<auth.AuthCubit, auth.AuthState>(
+              listener: (context, state) {
+                if (state is auth.AuthError) {
+                  _showSyncNotification(
+                    'خطأ في تسجيل الخروج: ${state.message}',
+                  );
+                } else if (state is auth.Unauthenticated) {
+                  _showSyncNotification(
+                    'تم تسجيل الخروج وحذف جميع البيانات المحلية بنجاح',
+                  );
+                }
+              },
+              builder: (context, state) {
+                return IconButton(
+                  icon: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child:
+                        state is auth.AuthLoading
+                            ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Icon(Icons.logout, size: 18),
+                  ),
+                  tooltip: 'تسجيل الخروج',
+                  onPressed:
+                      state is auth.AuthLoading
+                          ? null
+                          : () => _showLogoutDialog(context),
+                );
               },
             ),
           ),
@@ -331,10 +485,6 @@ class _BatchesScreenState extends State<BatchesScreen>
                           text = 'خطأ في المزامنة';
                           color = AppTheme.error;
                           break;
-                        default:
-                          icon = Icons.sync;
-                          text = '';
-                          color = AppTheme.info;
                       }
 
                       return Container(
